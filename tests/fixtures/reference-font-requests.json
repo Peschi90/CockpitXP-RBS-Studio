@@ -1,0 +1,345 @@
+[
+  {
+    "family": "Arial",
+    "height": 24,
+    "bold": true,
+    "italic": false,
+    "text": "Position"
+  },
+  {
+    "family": "Arial",
+    "height": 24,
+    "bold": true,
+    "italic": false,
+    "text": "Fahrer / Fahrzeug"
+  },
+  {
+    "family": "Arial",
+    "height": 24,
+    "bold": true,
+    "italic": false,
+    "text": "Runden"
+  },
+  {
+    "family": "Arial",
+    "height": 24,
+    "bold": true,
+    "italic": false,
+    "text": "Rundenzeit"
+  },
+  {
+    "family": "Arial",
+    "height": 24,
+    "bold": true,
+    "italic": false,
+    "text": "Tank / Strafe"
+  },
+  {
+    "family": "Arial",
+    "height": 24,
+    "bold": true,
+    "italic": false,
+    "text": "Tank %"
+  },
+  {
+    "family": "Arial",
+    "height": 24,
+    "bold": true,
+    "italic": false,
+    "text": "schnellste Runde"
+  },
+  {
+    "family": "Arial",
+    "height": 20,
+    "bold": true,
+    "italic": false,
+    "text": "Stopps"
+  },
+  {
+    "family": "Arial",
+    "height": 20,
+    "bold": true,
+    "italic": false,
+    "text": "Punkte"
+  },
+  {
+    "family": "Arial",
+    "height": 24,
+    "bold": true,
+    "italic": false,
+    "text": "CU"
+  },
+  {
+    "family": "Arial",
+    "height": 26,
+    "bold": false,
+    "italic": false,
+    "text": "Bahnrekord:"
+  },
+  {
+    "family": "Arial",
+    "height": 26,
+    "bold": false,
+    "italic": false,
+    "text": "sek. von"
+  },
+  {
+    "family": "Arial",
+    "height": 26,
+    "bold": false,
+    "italic": false,
+    "text": "am"
+  },
+  {
+    "family": "Arial",
+    "height": 28,
+    "bold": false,
+    "italic": false,
+    "text": "box"
+  },
+  {
+    "family": "Arial",
+    "height": 28,
+    "bold": false,
+    "italic": false,
+    "text": "bitmap"
+  },
+  {
+    "family": "Arial",
+    "height": 72,
+    "bold": true,
+    "italic": true,
+    "text": "1"
+  },
+  {
+    "family": "Arial",
+    "height": 68,
+    "bold": true,
+    "italic": true,
+    "text": "2"
+  },
+  {
+    "family": "Arial",
+    "height": 68,
+    "bold": true,
+    "italic": true,
+    "text": "3"
+  },
+  {
+    "family": "Arial",
+    "height": 68,
+    "bold": true,
+    "italic": false,
+    "text": "4"
+  },
+  {
+    "family": "Arial",
+    "height": 72,
+    "bold": true,
+    "italic": false,
+    "text": "MMM"
+  },
+  {
+    "family": "Arial",
+    "height": 72,
+    "bold": true,
+    "italic": false,
+    "text": "99999"
+  },
+  {
+    "family": "Arial",
+    "height": 72,
+    "bold": true,
+    "italic": false,
+    "text": "+ 10,12 s"
+  },
+  {
+    "family": "Arial",
+    "height": 160,
+    "bold": true,
+    "italic": false,
+    "text": "120:00"
+  },
+  {
+    "family": "Arial",
+    "height": 54,
+    "bold": true,
+    "italic": false,
+    "text": "Qualifikation  10 min."
+  },
+  {
+    "family": "Arial",
+    "height": 96,
+    "bold": true,
+    "italic": false,
+    "text": "1"
+  },
+  {
+    "family": "Arial",
+    "height": 96,
+    "bold": true,
+    "italic": false,
+    "text": "2"
+  },
+  {
+    "family": "Arial",
+    "height": 96,
+    "bold": true,
+    "italic": false,
+    "text": "3"
+  },
+  {
+    "family": "Arial",
+    "height": 96,
+    "bold": true,
+    "italic": false,
+    "text": "4"
+  },
+  {
+    "family": "Arial",
+    "height": 96,
+    "bold": true,
+    "italic": false,
+    "text": "5"
+  },
+  {
+    "family": "Arial",
+    "height": 96,
+    "bold": true,
+    "italic": false,
+    "text": "6"
+  },
+  {
+    "family": "Arial",
+    "height": 64,
+    "bold": true,
+    "italic": false,
+    "text": "MMM"
+  },
+  {
+    "family": "Arial",
+    "height": 28,
+    "bold": false,
+    "italic": false,
+    "text": "bildnation"
+  },
+  {
+    "family": "Arial",
+    "height": 28,
+    "bold": false,
+    "italic": false,
+    "text": "bildfahrer"
+  },
+  {
+    "family": "Arial",
+    "height": 26,
+    "bold": true,
+    "italic": false,
+    "text": "fahrzeugname12345678"
+  },
+  {
+    "family": "Arial",
+    "height": 28,
+    "bold": false,
+    "italic": false,
+    "text": "bildfahrzeug"
+  },
+  {
+    "family": "Arial",
+    "height": 96,
+    "bold": true,
+    "italic": false,
+    "text": "9999"
+  },
+  {
+    "family": "Arial",
+    "height": 96,
+    "bold": true,
+    "italic": false,
+    "text": "99,999"
+  },
+  {
+    "family": "Arial",
+    "height": 28,
+    "bold": false,
+    "italic": false,
+    "text": "tankbar"
+  },
+  {
+    "family": "Arial",
+    "height": 28,
+    "bold": false,
+    "italic": false,
+    "text": "progressbar"
+  },
+  {
+    "family": "Arial",
+    "height": 44,
+    "bold": true,
+    "italic": false,
+    "text": "100,0"
+  },
+  {
+    "family": "Arial",
+    "height": 28,
+    "bold": false,
+    "italic": false,
+    "text": "symbole_einaus"
+  },
+  {
+    "family": "Arial",
+    "height": 48,
+    "bold": true,
+    "italic": false,
+    "text": "99"
+  },
+  {
+    "family": "Arial",
+    "height": 48,
+    "bold": true,
+    "italic": false,
+    "text": "15"
+  },
+  {
+    "family": "Arial",
+    "height": 48,
+    "bold": true,
+    "italic": false,
+    "text": "55,555 s"
+  },
+  {
+    "family": "Arial",
+    "height": 48,
+    "bold": true,
+    "italic": false,
+    "text": "Rd 9999"
+  },
+  {
+    "family": "Arial",
+    "height": 36,
+    "bold": true,
+    "italic": false,
+    "text": "status"
+  },
+  {
+    "family": "Arial",
+    "height": 36,
+    "bold": true,
+    "italic": false,
+    "text": "55,555"
+  },
+  {
+    "family": "Arial",
+    "height": 36,
+    "bold": true,
+    "italic": false,
+    "text": "bahnrekordfahrer"
+  },
+  {
+    "family": "Arial",
+    "height": 36,
+    "bold": true,
+    "italic": false,
+    "text": "24.04.2013"
+  }
+]
