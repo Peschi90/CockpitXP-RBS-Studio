@@ -305,7 +305,7 @@ watch(
   <div class="app-shell" :class="{ 'simulation-expanded': simPanel }">
     <header class="topbar">
       <div class="brand">
-        <div class="brand-mark">R<span>•</span></div>
+        <img class="brand-mark" src="/cockpit-xp-logo.png" alt="Cockpit-XP" />
         <div>
           <strong>RBS <span>STUDIO</span></strong
           ><small>COCKPIT-XP EDITOR</small>

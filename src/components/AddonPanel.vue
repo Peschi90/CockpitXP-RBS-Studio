@@ -396,7 +396,7 @@ function removeEngine(e: AddonEngine) {
 }
 .addon-panel summary {
   cursor: pointer;
-  color: #b9e66b;
+  color: #76c7ff;
   margin: 8px 0;
 }
 .controls {

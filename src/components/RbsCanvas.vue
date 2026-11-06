@@ -530,7 +530,7 @@ defineExpose({ fit });
               :width="Math.max(8, r.width) + 6 / zoom"
               :height="Math.max(8, r.height) + 6 / zoom"
               fill="none"
-              stroke="#b9e66b"
+              stroke="#76c7ff"
               :stroke-width="1.3 / zoom"
               pointer-events="none"
             />
@@ -540,7 +540,7 @@ defineExpose({ fit });
               :y="r.y + r.height - 4 / zoom"
               :width="8 / zoom"
               :height="8 / zoom"
-              fill="#b9e66b"
+              fill="#76c7ff"
               stroke="#172014"
               :stroke-width="1 / zoom"
               style="cursor: nwse-resize"

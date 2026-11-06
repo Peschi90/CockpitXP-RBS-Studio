@@ -221,7 +221,7 @@ onUnmounted(stop);
 }
 .runtime-panel summary {
   cursor: pointer;
-  color: #b9e66b;
+  color: #76c7ff;
 }
 .runtime-controls {
   display: flex;
