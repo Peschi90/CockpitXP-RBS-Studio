@@ -12,6 +12,7 @@ import { isTauri, invoke } from "@tauri-apps/api/core";
 import { systemPalette } from "./core/xml";
 import {
   FolderOpen,
+  Home,
   Save,
   Plus,
   Undo2,
@@ -19,6 +20,7 @@ import {
   MousePointer2,
   Grid2X2,
   Magnet,
+  Crosshair,
   Scan,
   Minus,
   Play,
@@ -48,6 +50,9 @@ import {
   Gauge,
   ArrowUpRight,
 } from "@lucide/vue";
+import StartDashboard from "./components/StartDashboard.vue";
+import TemplatePicker from "./components/TemplatePicker.vue";
+import { type TemplateKind } from "./core/templates";
 import RbsCanvas from "./components/RbsCanvas.vue";
 import Inspector from "./components/Inspector.vue";
 import RuntimePanel from "./components/RuntimePanel.vue";
@@ -69,6 +74,22 @@ import {
 } from "./core/simulator";
 const e = reactive(useEditor()),
   canvas = ref<InstanceType<typeof RbsCanvas>>();
+const dashboard = ref(true);
+function savedSmartGuides() {
+  try {
+    return localStorage.getItem("rbs-studio-smart-guides") !== "off";
+  } catch {
+    return true;
+  }
+}
+const smartGuides = ref(savedSmartGuides());
+watch(smartGuides, (value) => {
+  try {
+    localStorage.setItem("rbs-studio-smart-guides", value ? "on" : "off");
+  } catch {
+    /* Storage may be unavailable; editing still works. */
+  }
+});
 const tab = ref<"layers" | "elements" | "library">("layers"),
   search = ref(""),
   zoom = ref(0.5),
@@ -79,7 +100,7 @@ const tab = ref<"layers" | "elements" | "library">("layers"),
 const modal = ref<"new" | "xml" | "repeat" | "help" | "issues" | null>(null),
   xmlDraft = ref(""),
   xmlError = ref(""),
-  newKind = ref<"race" | "blank">("race"),
+  newKind = ref<TemplateKind>("race"),
   newWidth = ref(1920),
   newHeight = ref(1080),
   newSlots = ref(6),
@@ -218,6 +239,13 @@ function keydown(event: KeyboardEvent) {
     return;
   }
   if (modal.value) return;
+  if (dashboard.value) {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "o") {
+      event.preventDefault();
+      e.open();
+    }
+    return;
+  }
   const mod = event.ctrlKey || event.metaKey;
   if (mod && event.key.toLowerCase() === "s") {
     event.preventDefault();
@@ -241,7 +269,12 @@ function keydown(event: KeyboardEvent) {
     e.duplicate();
   } else if (mod && event.key.toLowerCase() === "a") {
     event.preventDefault();
-    e.selected = e.doc.elements.map((n) => n.id);
+    e.selected = [
+      ...e.selected,
+      ...e.doc.elements
+        .map((n) => n.id)
+        .filter((id) => !e.selected.includes(id)),
+    ];
   } else if (event.key === "Delete") {
     event.preventDefault();
     e.remove();
@@ -300,19 +333,70 @@ watch(
     e.refreshAssets();
   },
 );
+function showDashboard() {
+  dashboard.value = true;
+  e.sim.running = false;
+}
+async function resumeEditor(fit = false) {
+  dashboard.value = false;
+  await nextTick();
+  if (fit) canvas.value?.fit();
+}
+watch(
+  () => e.documentRevision,
+  () => resumeEditor(true),
+);
+let thumbnailTimer: ReturnType<typeof setTimeout>;
+let thumbnailGeneration = 0;
+watch(
+  () => [e.documentRevision, e.source, e.assets, e.dirty],
+  () => {
+    clearTimeout(thumbnailTimer);
+    const generation = ++thumbnailGeneration;
+    if (!e.hasDocument || e.dirty || !e.path) return;
+    const path = e.path,
+      source = e.source,
+      native = isTauri();
+    thumbnailTimer = setTimeout(async () => {
+      const thumbnail = await canvas.value?.thumbnail();
+      if (
+        thumbnail &&
+        generation === thumbnailGeneration &&
+        path === e.path &&
+        source === e.source &&
+        !e.dirty
+      )
+        e.setRecentThumbnail(path, native, thumbnail);
+    }, 450);
+  },
+);
+onUnmounted(() => {
+  clearTimeout(thumbnailTimer);
+  thumbnailGeneration++;
+});
 </script>
 <template>
-  <div class="app-shell" :class="{ 'simulation-expanded': simPanel }">
+  <div
+    class="app-shell"
+    :class="{ 'simulation-expanded': simPanel && !dashboard }"
+  >
     <header class="topbar">
+      <button
+        title="Startseite"
+        :class="{ active: dashboard }"
+        @click="showDashboard"
+      >
+        <Home :size="19" />
+      </button>
       <div class="brand">
         <img class="brand-mark" src="/cockpit-xp-logo.png" alt="Cockpit-XP" />
         <div>
           <strong>RBS <span>STUDIO</span></strong
           ><small>COCKPIT-XP EDITOR</small>
         </div>
-        <span class="version-tag">PREVIEW 0.4.1</span>
+        <span class="version-tag">PREVIEW 0.6.0</span>
       </div>
-      <div class="document-title">
+      <div v-if="e.hasDocument" class="document-title">
         <span class="document-dot" :class="{ dirty: e.dirty }"></span
         ><span :title="e.path || e.title">{{ e.title }}</span
         ><small>{{
@@ -329,7 +413,7 @@ watch(
         ><button :disabled="e.busy" @click="e.open()">
           <FolderOpen :size="16" /> Öffnen
         </button>
-        <div class="save-group">
+        <div v-if="e.hasDocument" class="save-group">
           <button class="primary" :disabled="e.busy" @click="e.save()">
             <Save :size="15" /> Speichern</button
           ><button
@@ -343,7 +427,7 @@ watch(
         </div>
       </div>
     </header>
-    <div class="toolbar">
+    <div v-show="!dashboard" class="toolbar">
       <div class="tool-group">
         <button
           title="Rückgängig · Strg Z"
@@ -375,16 +459,25 @@ watch(
         >
           <Magnet :size="16" />
         </button>
+        <button
+          :class="{ active: smartGuides }"
+          :aria-pressed="smartGuides"
+          aria-label="Intelligente Hilfslinien"
+          title="Intelligente Hilfslinien · An Kanten und Mittelpunkten einrasten · Alt zum Übergehen"
+          @click="smartGuides = !smartGuides"
+        >
+          <Crosshair :size="16" />
+        </button>
       </div>
       <div class="tool-group">
         <button
-          title="Links ausrichten"
+          title="Vertikal ausrichten · X wie das erste markierte Element"
           :disabled="e.selected.length < 2"
           @click="e.align('left')"
         >
           <AlignStartVertical :size="17" /></button
         ><button
-          title="Oben ausrichten"
+          title="Horizontal ausrichten · Y wie das erste markierte Element"
           :disabled="e.selected.length < 2"
           @click="e.align('top')"
         >
@@ -447,7 +540,21 @@ watch(
       ><button @click="e.restore()">Wiederherstellen</button
       ><button @click="e.dismissRecovery()">Verwerfen</button>
     </div>
+    <StartDashboard
+      v-if="dashboard"
+      :documents="e.recentDocuments"
+      :busy="e.busy"
+      :has-document="e.hasDocument"
+      :title="e.title"
+      :dirty="e.dirty"
+      @create="modal = 'new'"
+      @open="e.open()"
+      @resume="resumeEditor()"
+      @recent="e.openRecent"
+      @remove="e.removeRecent"
+    />
     <main
+      v-show="!dashboard"
       class="workspace"
       :class="{ 'full-preview': preview }"
       :inert="e.busy || undefined"
@@ -494,7 +601,10 @@ watch(
               v-for="node in visibleElements"
               :key="node.id"
               class="layer-row"
-              :class="{ selected: e.selected.includes(node.id) }"
+              :class="{
+                selected: e.selected.includes(node.id),
+                'anchor-layer': e.selected[0] === node.id,
+              }"
               :title="`${node.tag} · ${node.attrs.addonvariablename || node.attrs.text || node.text.trim()}`"
               @click="select(node.id, $event)"
             >
@@ -518,6 +628,11 @@ watch(
                     Number(node.attrs.nr) > 0 ? ` · Spur ${node.attrs.nr}` : ""
                   }}</small
                 ></span
+              ><span
+                v-if="e.selected[0] === node.id"
+                class="anchor-badge"
+                title="Zuerst markiert · Bezugspunkt beim Ausrichten"
+                >1</span
               ><span
                 v-if="Number(node.attrs.nr) > 0"
                 class="slot-dot"
@@ -627,17 +742,20 @@ watch(
           :zoom="zoom"
           :grid="grid"
           :snap="snap"
+          :smart-guides="smartGuides"
           :busy="e.busy"
           :preview="preview"
           @select="e.selected = $event"
           @move="e.move"
           @resize="(width, height) => e.updateGeometry({ width, height })"
           @fit="zoom = $event"
+          @zoom="zoom = $event"
         />
         <div class="canvas-bottomline">
           <span
             ><MousePointer2 :size="12" /> Ziehen zum Verschieben
-            <i>·</i> Umschalt + Klick für Mehrfachauswahl</span
+            <i>·</i> Mausrad zum Zoomen · Umschalt + Klick für
+            Mehrfachauswahl</span
           ><button @click="modal = 'help'">
             <CircleHelp :size="13" /> Hilfe
           </button>
@@ -660,7 +778,7 @@ watch(
         @repeat="modal = 'repeat'"
       />
     </main>
-    <section v-if="simPanel" class="simulator-panel">
+    <section v-if="simPanel && !dashboard" class="simulator-panel">
       <div class="sim-header">
         <div>
           <Gauge :size="17" /><strong>Rennsimulation</strong
@@ -806,7 +924,7 @@ watch(
     <div v-if="modal" class="modal-backdrop" @click.self="modal = null">
       <section
         class="modal"
-        :class="{ 'xml-modal': modal === 'xml' }"
+        :class="{ 'xml-modal': modal === 'xml', 'new-modal': modal === 'new' }"
         role="dialog"
         aria-modal="true"
         :aria-label="
@@ -838,26 +956,16 @@ watch(
         </div>
         <template v-if="modal === 'new'"
           ><p class="muted">
-            Starte leer oder mit einem gestalteten Rennlayout. Alle Elemente
-            bleiben einzeln bearbeitbar.
+            Zwölf Rennlayouts oder eine leere Arbeitsfläche. Die Vorlage wird
+            für deine Fahreranzahl erstellt; alle Elemente bleiben einzeln
+            bearbeitbar.
           </p>
-          <div class="template-options">
-            <button
-              :class="{ chosen: newKind === 'race' }"
-              @click="newKind = 'race'"
-            >
-              <div class="template-preview"><i v-for="n in 5" :key="n" /></div>
-              <strong>Club Race</strong
-              ><span>Modernes Rennlayout mit Fahrerzeilen</span></button
-            ><button
-              :class="{ chosen: newKind === 'blank' }"
-              @click="newKind = 'blank'"
-            >
-              <div class="template-preview blank"><Plus :size="30" /></div>
-              <strong>Leere Arbeitsfläche</strong
-              ><span>Dein Design, von Grund auf</span>
-            </button>
-          </div>
+          <TemplatePicker
+            v-model="newKind"
+            :slots="newSlots"
+            :width="newWidth"
+            :height="newHeight"
+          />
           <label class="stack-label"
             >Auflösung<select @change="setResolution">
               <option value="1920x1080">Full HD · 1920 × 1080</option>
@@ -884,7 +992,10 @@ watch(
                 max="16384" /></label
             ><label
               ><span>Fahrer</span
-              ><select v-model.number="newSlots">
+              ><select
+                v-model.number="newSlots"
+                aria-label="Fahreranzahl der Vorlage"
+              >
                 <option v-for="n in 8" :key="n">{{ n }}</option>
               </select></label
             >
@@ -982,6 +1093,15 @@ watch(
               Bilder haben einen Größenanfasser unten rechts. Für Fahrerzeilen
               mehrere Elemente auswählen und „Für weitere Spur kopieren“
               verwenden.
+            </p>
+            <h3>Intelligente Hilfslinien</h3>
+            <p>
+              „Intelligente Hilfslinien“ in der Werkzeugleiste lässt Elemente
+              beim Ziehen an Kanten und Mittelpunkten einrasten. Lila Linien
+              zeigen die Ausrichtung. Der Schalter bleibt nach einem Neustart
+              erhalten. Alt übergeht Hilfslinien und Raster vorübergehend;
+              Escape bricht das Ziehen ab. Das 8-Pixel-Raster lässt sich separat
+              über das Magnet-Symbol schalten.
             </p>
             <h3>Sicher speichern</h3>
             <p>

@@ -1,3 +1,4 @@
+import { openEditor } from "./helpers";
 import { test, expect } from "@playwright/test";
 import fs from "node:fs";
 const requests: Record<string, unknown>[] = JSON.parse(
@@ -46,7 +47,7 @@ test("Windows metrics produce the field bounds in the supplied Cockpit reference
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("/");
+  await openEditor(page);
   await nativeReference(page);
   const source = `<?xml version="1.0" encoding="utf-8"?><RennScreen><base><dim xmax="1912" ymax="1008"/><defaults ft="Arial"/></base><variablen>
   <runde xpos="708" ypos="298" fh="96" fs="b" fc="slotcolor" fdc="000000FF" fa="right">9999</runde>
@@ -84,7 +85,7 @@ test("installed reference screen renders at its saved coordinates", async ({
   const path =
     "C:/ProgramData/Cockpit-V2/RennBildschirm/cockpit/6 Fahrer/Cp-6S-07 Rennen 1920x1080/Rennen.xml";
   test.skip(!fs.existsSync(path), "Installed Cockpit reference is unavailable");
-  await page.goto("/");
+  await openEditor(page);
   const assets: Record<string, string> = {};
   for (const file of ["box.jpg", "tanken.jpg", "Cp_Logo-V3-50x50.png"])
     assets[file] =

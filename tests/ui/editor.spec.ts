@@ -1,3 +1,4 @@
+import { openEditor } from "./helpers";
 import { test, expect } from "@playwright/test";
 import fs from "node:fs";
 import { createTemplate } from "../../src/core/templates";
@@ -6,7 +7,7 @@ test("edit, undo, duplicate, validate XML and export a template", async ({
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("/");
+  await openEditor(page);
   await expect(page.getByText("COCKPIT-XP EDITOR")).toBeVisible();
   await page.getByRole("button", { name: "Elemente", exact: true }).click();
   await page
@@ -53,7 +54,7 @@ test("edit, undo, duplicate, validate XML and export a template", async ({
 test("legacy import preserves unknown XML and simulation does not dirty it", async ({
   page,
 }) => {
-  await page.goto("/");
+  await openEditor(page);
   const source = createTemplate("blank").replace(
     "<texte>",
     '<texte><!-- behalten --><text xpos="20" ypos="30" fh="30" fc="00FFFFFF" text="Grüße" fremd="bleibt"/>',
@@ -78,7 +79,7 @@ test("legacy import preserves unknown XML and simulation does not dirty it", asy
   await expect(page.locator(".document-dot")).not.toHaveClass(/dirty/);
 });
 test("new screen, drag, resize and driver-row copying", async ({ page }) => {
-  await page.goto("/");
+  await openEditor(page);
   await page.getByRole("button", { name: "Neu", exact: true }).click();
   await page.getByRole("button", { name: "Leere Arbeitsfläche" }).click();
   await page.getByRole("button", { name: "Rennbildschirm erstellen" }).click();
@@ -109,7 +110,7 @@ test("new screen, drag, resize and driver-row copying", async ({ page }) => {
 test("simulator fits the workspace and renders editable live data", async ({
   page,
 }) => {
-  await page.goto("/");
+  await openEditor(page);
   await page
     .locator(".layer-row")
     .filter({ hasText: "Fahrername" })
@@ -132,7 +133,7 @@ test("simulator fits the workspace and renders editable live data", async ({
 test("table duplication includes its columns and simulation exports observed laps", async ({
   page,
 }) => {
-  await page.goto("/");
+  await openEditor(page);
   await page.getByRole("button", { name: "Neu", exact: true }).click();
   await page.getByRole("button", { name: "Leere Arbeitsfläche" }).click();
   await page.getByRole("button", { name: "Rennbildschirm erstellen" }).click();
@@ -169,7 +170,7 @@ test("table duplication includes its columns and simulation exports observed lap
 test("extended simulator controls leave the document unchanged", async ({
   page,
 }) => {
-  await page.goto("/");
+  await openEditor(page);
   await page.getByRole("button", { name: "Simulator BETA" }).click();
   const panel = page.locator(".runtime-panel");
   await panel.locator("summary").first().click();
@@ -189,7 +190,7 @@ test("separate slot text colors and AddOn events render without changing the RBS
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("/");
+  await openEditor(page);
   const source = createTemplate("blank")
     .replace(
       "<grafik>",

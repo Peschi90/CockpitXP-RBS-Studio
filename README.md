@@ -1,6 +1,22 @@
 # RBS Studio
 
-Eigenständiger Windows-Editor für Cockpit-XP-Rennbildschirme. Version **0.4.1 Preview**. Schwerpunkt: vorhandene RBS bearbeiten und ihre XML-Struktur erhalten. Keine Installation in Cockpit-XP erforderlich.
+Eigenständiger Windows-Editor für Cockpit-XP-Rennbildschirme. Version **0.6.0 Preview**. Schwerpunkt: vorhandene RBS bearbeiten und ihre XML-Struktur erhalten. Keine Installation in Cockpit-XP erforderlich.
+
+## Neu in 0.6.0
+
+- **Intelligente Hilfslinien:** Beim Verschieben rasten linke/rechte/obere/untere Kanten und Mittelpunkte an anderen sichtbaren Elementen und der Arbeitsfläche ein. Lila Linien zeigen die Ausrichtung. Die Toleranz beträgt sechs Bildschirmpixel unabhängig vom Zoom. Für Texte gelten die gemessenen Feldgrößen, für Mehrfachauswahlen der gemeinsame Rahmen; Abstände innerhalb der Auswahl bleiben erhalten. Ein Ziehen ist mit einem Schritt rückgängig zu machen. Escape bricht ab.
+- **Abschaltbar:** Der Fadenkreuz-Schalter „Intelligente Hilfslinien“ in der Werkzeugleiste schaltet die Funktion dauerhaft an/aus und merkt sich die Wahl lokal. Alt übergeht während des Ziehens Hilfslinien und Raster. Das bisherige 8-Pixel-Raster bleibt unabhängig über das Magnet-Symbol schaltbar. Hilfslinien sind reine Editorhilfen und werden nicht in RBS-Dateien oder Vorschaubilder geschrieben. Größenänderungen verwenden weiterhin nur das optionale Raster.
+- **Zwölf gestaltete Vorlagen:** Club Race, Timing Pro, Qualifying, Langstrecke, Großanzeige, Fahrer-Karten, Boxenmauer, Race TV, Duell, Boxenmonitor, Tageslicht und Retro Timing, zusätzlich eine leere Arbeitsfläche. Der Dialog zeigt echte Layoutvorschauen, die auf Fahreranzahl und Auflösung reagieren. Beim Erstellen werden Elemente für 1–8 Fahrer aufgebaut. Alle Felder bleiben einzeln editierbar, ohne zusätzliche Bilddateien oder AddOns. Bei einem bereits erstellten RBS baut ein späteres Ändern der Fahreranzahl das Layout weiterhin nicht automatisch um.
+- **Zoom bleibt erhalten:** Verschieben, Bearbeiten und Rückgängig setzen den gewählten Zoom nicht mehr auf „Einpassen“ zurück.
+
+## Neu in 0.5.0
+
+- **Startdashboard:** Beim Start erscheinen „Neuen RBS anlegen“, „RBS öffnen“ und bis zu zwölf zuletzt verwendete RBS mit Vorschaubildern. Der Verlauf wird lokal gespeichert. Die Windows-App lädt beim Wiederöffnen stets die aktuelle Datei; fehlende oder verschobene Dateien werden als Fehler angezeigt. Ein Eintrag kann entfernt werden, ohne die Datei zu löschen. Der Verlauf füllt sich ab dieser Version beim Öffnen und Speichern.
+- **Zurück zur Startseite:** Das Haus-Symbol öffnet das Dashboard. Das aktuelle Dokument, seine Auswahl und ungespeicherte Änderungen bleiben erhalten. „Zurück zu …“ setzt die Arbeit fort. Eine laufende Simulation pausiert beim Wechsel auf die Startseite.
+- **Mausrad-Zoom:** Über der RBS-Arbeitsfläche vergrößert das Mausrad nach oben und verkleinert nach unten (10–300 %). Bei gescrollten Flächen bleibt die Stelle unter dem Mauszeiger stehen; an den Scrollgrenzen begrenzt der sichtbare Bereich die Verschiebung. Die Seitenleisten scrollen weiterhin normal.
+- **Ausrichten am ersten Element:** Mehrere Elemente mit Umschalt/Ctrl + Klick auswählen. „Horizontal ausrichten“ übernimmt nur die Y-Position des zuerst ausgewählten Elements. „Vertikal ausrichten“ übernimmt nur dessen X-Position. Dieses Bezugselement erhält einen orangefarbenen Rahmen mit „1 · Bezug“ und die Markierung „1“ in der Ebenenliste. Wird es abgewählt, übernimmt das nächste Element in der Auswahlreihenfolge. Änderungen lassen sich mit einem Schritt rückgängig machen.
+
+Vorschaubilder werden aus dem geöffneten/gespeicherten Stand erstellt und enthalten keine Auswahlrahmen. Nicht gespeicherte Änderungen ersetzen keine Dateivorschau. Die Browser-Demo speichert kleine lokale Vorschaukopien, da sie Dateien nicht selbstständig vom Laufwerk wiederöffnen darf; die Windows-App speichert im Verlauf Pfade und Vorschaubilder.
 
 ## Korrekturen in 0.4.1
 
@@ -18,7 +34,7 @@ Technische Grundlagen: [Cockpit-RennDesigner, Platzhalter und Fonthöhe](https:/
 
 ## Starten
 
-Im Ordner `release/0.4.1` liegt `RBS Studio.exe` zum direkten Start. Alternativ installiert `RBS Studio_0.4.1_x64-setup.exe` die Anwendung für den aktuellen Windows-Benutzer. Die Anwendung verwendet Microsoft Edge WebView2; der Installer kann eine fehlende Laufzeit nachinstallieren. Die EXE ist nicht digital signiert.
+Im Ordner `release/0.6.0` liegt `RBS Studio.exe` zum direkten Start. Alternativ installiert `RBS Studio_0.6.0_x64-setup.exe` die Anwendung für den aktuellen Windows-Benutzer. Die Anwendung verwendet Microsoft Edge WebView2; der Installer kann eine fehlende Laufzeit nachinstallieren. Die EXE ist nicht digital signiert.
 
 1. **Öffnen** wählt eine `Rennen.xml`, `Startampel.xml`, einen anderen Rennbildschirm oder ein RBS-Overlay aus.
 2. Der Bibliothek-Reiter durchsucht zunächst `C:\ProgramData\Cockpit-V2\RennBildschirm`. Über **Ordner wählen** lässt sich ein anderes Datenverzeichnis auswählen.

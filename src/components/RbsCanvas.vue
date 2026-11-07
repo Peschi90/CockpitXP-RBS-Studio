@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch, useId } from "vue";
+import {
+  computed,
+  onMounted,
+  onUnmounted,
+  ref,
+  watch,
+  useId,
+  nextTick,
+} from "vue";
 import {
   parseRbs,
   geometry,
@@ -17,6 +25,12 @@ import { fieldSample, fontRequest, measureRbsText } from "../core/text-layout";
 import ColorKeyImage from "./ColorKeyImage.vue";
 import DataGrid from "./DataGrid.vue";
 import { symbolVisible, barPercent, bindingKey } from "../core/runtime";
+import {
+  selectionBounds,
+  snapMove,
+  type SnapRect,
+  type SnapGuide,
+} from "../core/snapping";
 const props = defineProps<{
   doc: RbsDocument;
   selected: number[];
@@ -25,6 +39,7 @@ const props = defineProps<{
   zoom: number;
   grid: boolean;
   snap: boolean;
+  smartGuides?: boolean;
   busy: boolean;
   preview: boolean;
   embedded?: boolean;
@@ -34,6 +49,7 @@ const emit = defineEmits<{
   move: [dx: number, dy: number];
   resize: [width: number, height: number];
   fit: [zoom: number];
+  zoom: [zoom: number];
 }>();
 const viewport = ref<HTMLElement>(),
   drag = ref<{
@@ -44,7 +60,11 @@ const viewport = ref<HTMLElement>(),
     resize: boolean;
     width: number;
     height: number;
+    bounds: SnapRect;
+    targets: SnapRect[];
   } | null>(null);
+const guides = ref<SnapGuide[]>([]);
+const artboard = ref<SVGSVGElement>();
 const clipPrefix = useId();
 const imageSizes = ref<Record<string, { width: number; height: number }>>({});
 const loadingImages = new Set<string>();
@@ -217,6 +237,9 @@ function down(event: PointerEvent, n: XmlNode, resize = false) {
     emit("select", ids);
   }
   const g = geometry(n);
+  const rects = rendered.value.filter((r) => ids.includes(r.n.id));
+  if (!rects.length) return;
+  guides.value = [];
   drag.value = {
     x: event.clientX,
     y: event.clientY,
@@ -225,21 +248,43 @@ function down(event: PointerEvent, n: XmlNode, resize = false) {
     resize,
     width: g.width,
     height: g.height,
+    bounds: selectionBounds(rects),
+    targets: [
+      ...rendered.value
+        .filter((r) => !ids.includes(r.n.id) && r.visible)
+        .map((r) => selectionBounds([r])),
+      { x: 0, y: 0, width: props.doc.width, height: props.doc.height },
+    ],
   };
   (event.currentTarget as Element).setPointerCapture(event.pointerId);
 }
 function pointerMove(event: PointerEvent) {
   if (!drag.value) return;
-  const snap = props.snap && !event.altKey ? 8 : 1;
-  drag.value.dx =
-    Math.round((event.clientX - drag.value.x) / props.zoom / snap) * snap;
-  drag.value.dy =
-    Math.round((event.clientY - drag.value.y) / props.zoom / snap) * snap;
+  const d = drag.value;
+  const next = snapMove(
+    d.bounds,
+    d.targets,
+    (event.clientX - d.x) / props.zoom,
+    (event.clientY - d.y) / props.zoom,
+    props.zoom,
+    props.snap && !event.altKey,
+    !!props.smartGuides && !event.altKey && !d.resize,
+  );
+  d.dx = next.dx;
+  d.dy = next.dy;
+  guides.value = next.guides;
+}
+function cancelDrag() {
+  drag.value = null;
+  guides.value = [];
+}
+function dragKey(event: KeyboardEvent) {
+  if (event.key === "Escape") cancelDrag();
 }
 function pointerUp() {
   const d = drag.value;
   if (!d) return;
-  drag.value = null;
+  cancelDrag();
   if (!d.dx && !d.dy) return;
   if (d.resize)
     emit("resize", Math.max(2, d.width + d.dx), Math.max(2, d.height + d.dy));
@@ -261,6 +306,80 @@ function fit() {
       ),
     );
 }
+async function wheel(event: WheelEvent) {
+  if (
+    props.embedded ||
+    props.busy ||
+    drag.value ||
+    !artboard.value ||
+    !viewport.value
+  )
+    return;
+  event.preventDefault();
+  const delta =
+    event.deltaY *
+    (event.deltaMode === 1
+      ? 16
+      : event.deltaMode === 2
+        ? viewport.value.clientHeight
+        : 1);
+  if (!delta) return;
+  const next = Math.max(
+    0.1,
+    Math.min(
+      3,
+      props.zoom * Math.exp(-Math.max(-240, Math.min(240, delta)) * 0.002),
+    ),
+  );
+  if (next === props.zoom) return;
+  const before = artboard.value.getBoundingClientRect();
+  const x = (event.clientX - before.left) / before.width;
+  const y = (event.clientY - before.top) / before.height;
+  emit("zoom", next);
+  await nextTick();
+  if (!artboard.value || !viewport.value) return;
+  const after = artboard.value.getBoundingClientRect();
+  viewport.value.scrollLeft += after.left + x * after.width - event.clientX;
+  viewport.value.scrollTop += after.top + y * after.height - event.clientY;
+}
+async function thumbnail(): Promise<string> {
+  if (!artboard.value) return "";
+  const svg = artboard.value.cloneNode(true) as SVGSVGElement;
+  svg
+    .querySelectorAll(
+      ".selections, .editor-grid, .smart-guides, [data-overlay]",
+    )
+    .forEach((n) => n.remove());
+  const scale = Math.min(360 / props.doc.width, 204 / props.doc.height);
+  const width = Math.max(1, Math.round(props.doc.width * scale)),
+    height = Math.max(1, Math.round(props.doc.height * scale));
+  svg.setAttribute("width", String(width));
+  svg.setAttribute("height", String(height));
+  const url = URL.createObjectURL(
+    new Blob([new XMLSerializer().serializeToString(svg)], {
+      type: "image/svg+xml;charset=utf-8",
+    }),
+  );
+  try {
+    const img = new Image();
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error("Vorschau nicht verfügbar"));
+      img.src = url;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return "";
+    ctx.drawImage(img, 0, 0, width, height);
+    return canvas.toDataURL("image/webp", 0.8);
+  } catch {
+    return "";
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
 let observer: ResizeObserver;
 onMounted(() => {
   observer = new ResizeObserver(() => {
@@ -269,16 +388,17 @@ onMounted(() => {
   if (viewport.value) observer.observe(viewport.value);
   fit();
   window.addEventListener("pointerup", pointerUp);
+  window.addEventListener("keydown", dragKey);
+  window.addEventListener("blur", cancelDrag);
 });
 onUnmounted(() => {
   observer?.disconnect();
   window.removeEventListener("pointerup", pointerUp);
+  window.removeEventListener("keydown", dragKey);
+  window.removeEventListener("blur", cancelDrag);
 });
-watch(
-  () => [props.doc.width, props.doc.height],
-  () => fit(),
-);
-defineExpose({ fit });
+watch([() => props.doc.width, () => props.doc.height], () => fit());
+defineExpose({ fit, thumbnail });
 </script>
 <template>
   <div
@@ -286,6 +406,7 @@ defineExpose({ fit });
     class="canvas-viewport"
     :class="{ 'preview-mode': preview, embedded }"
     @pointerdown.self="emit('select', [])"
+    @wheel="wheel"
   >
     <div
       class="artboard-shell"
@@ -299,6 +420,7 @@ defineExpose({ fit });
         ><span>{{ preview ? "SIMULIERTE VORSCHAU" : "RENNBILDSCHIRM" }}</span>
       </div>
       <svg
+        ref="artboard"
         class="artboard"
         :width="doc.width * zoom"
         :height="doc.height * zoom"
@@ -306,7 +428,7 @@ defineExpose({ fit });
         xmlns="http://www.w3.org/2000/svg"
         @pointermove="pointerMove"
         @pointerup="pointerUp"
-        @pointercancel="drag = null"
+        @pointercancel="cancelDrag"
         @pointerdown.self="emit('select', [])"
       >
         <defs>
@@ -487,6 +609,7 @@ defineExpose({ fit });
           />
         </g>
         <foreignObject
+          data-overlay
           v-for="o in overlayScreens"
           :key="o.handle"
           :x="o.x"
@@ -514,26 +637,66 @@ defineExpose({ fit });
         </foreignObject>
         <rect
           v-if="grid && !preview"
+          class="editor-grid"
           :width="doc.width"
           :height="doc.height"
           fill="url(#studio-grid)"
           pointer-events="none"
         />
+        <g
+          v-if="!preview && smartGuides && guides.length"
+          class="smart-guides"
+          pointer-events="none"
+        >
+          <line
+            v-for="(guide, i) in guides"
+            :key="i"
+            :data-axis="guide.axis"
+            :x1="guide.axis === 'x' ? guide.position : guide.start"
+            :x2="guide.axis === 'x' ? guide.position : guide.end"
+            :y1="guide.axis === 'y' ? guide.position : guide.start"
+            :y2="guide.axis === 'y' ? guide.position : guide.end"
+            stroke="#ed65e8"
+            :stroke-width="1 / zoom"
+            :stroke-dasharray="`${5 / zoom} ${3 / zoom}`"
+          />
+        </g>
         <g v-if="!preview" class="selections">
           <template
             v-for="r in rendered.filter((r) => r.selected)"
             :key="r.n.id"
           >
             <rect
+              class="selection-outline"
+              :class="{ 'selection-anchor': r.n.id === selected[0] }"
+              :data-selection-id="r.n.id"
               :x="r.x - 3 / zoom"
               :y="r.y - 3 / zoom"
               :width="Math.max(8, r.width) + 6 / zoom"
               :height="Math.max(8, r.height) + 6 / zoom"
               fill="none"
-              stroke="#76c7ff"
-              :stroke-width="1.3 / zoom"
+              :stroke="r.n.id === selected[0] ? '#fd9b02' : '#76c7ff'"
+              :stroke-width="(r.n.id === selected[0] ? 2.5 : 1.3) / zoom"
               pointer-events="none"
             />
+            <g
+              v-if="r.n.id === selected[0]"
+              class="selection-anchor-label"
+              pointer-events="none"
+              :transform="`translate(${r.x - 3 / zoom},${r.y - 22 / zoom}) scale(${1 / zoom})`"
+            >
+              <rect width="72" height="17" rx="3" fill="#fd9b02" />
+              <text
+                x="6"
+                y="12"
+                fill="#101925"
+                font-family="Segoe UI, Arial"
+                font-size="10"
+                font-weight="700"
+              >
+                1 · Bezug
+              </text>
+            </g>
             <rect
               v-if="selected.length === 1 && geometry(r.n).sized"
               :x="r.x + r.width - 4 / zoom"

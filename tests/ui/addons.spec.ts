@@ -1,3 +1,4 @@
+import { openEditor } from "./helpers";
 import { test, expect } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
@@ -9,7 +10,7 @@ test("interacts with virtual dialogs, exports spreadsheet data and keeps two add
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("/");
+  await openEditor(page);
   await page.getByRole("button", { name: "Simulator BETA" }).click();
   await page.locator(".runtime-panel > summary").click();
   await page.locator(".addon-panel > summary").click();
@@ -74,7 +75,7 @@ test("renders the installed joker dialog and runs its plus callback", async ({
   test.skip(!fs.existsSync(file), "Local Cockpit addon is absent");
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("/");
+  await openEditor(page);
   await page.getByRole("button", { name: "Simulator BETA" }).click();
   await page.locator(".runtime-panel > summary").click();
   await page.locator(".addon-panel > summary").click();

@@ -12,10 +12,11 @@ import {
   type XmlNode,
 } from "./xml";
 import { elementXml, sectionFor } from "./catalog";
-import { createTemplate } from "./templates";
+import { createTemplate, type TemplateKind } from "./templates";
 import { withGridColumns } from "./runtime";
 import { createSimulation } from "./simulator";
 import { layoutGeometry } from "./text-layout";
+import { useRecentDocuments, type RecentDocument } from "./recent-documents";
 export interface Opened {
   path: string;
   source: string;
@@ -30,6 +31,9 @@ export interface LibraryEntry {
   category: string;
 }
 export function useEditor() {
+  const recent = useRecentDocuments();
+  const hasDocument = ref(false),
+    documentRevision = ref(0);
   const source = ref(createTemplate("race")),
     savedSource = ref(source.value),
     path = ref(""),
@@ -239,15 +243,14 @@ export function useEditor() {
     commit(next, []);
   }
   function align(mode: "left" | "top" | "center" | "distribute") {
-    const nodes = doc.value.elements.filter((n) =>
-      selected.value.includes(n.id),
-    );
+    const nodes = selected.value
+      .map((id) => doc.value.elements.find((n) => n.id === id))
+      .filter((n): n is XmlNode => !!n);
     if (nodes.length < 2) return;
     const sorted = [...nodes].sort((a, b) => geometry(a).y - geometry(b).y),
       first = geometry(sorted[0]!),
       last = geometry(sorted.at(-1)!);
-    const minX = Math.min(...nodes.map((n) => geometry(n).x)),
-      minY = Math.min(...nodes.map((n) => geometry(n).y));
+    const anchor = geometry(nodes[0]!);
     commit(
       setAttributes(
         doc.value,
@@ -256,9 +259,9 @@ export function useEditor() {
           attrs: geometryAttributes(
             node,
             mode === "left"
-              ? { x: minX }
+              ? { x: anchor.x }
               : mode === "top"
-                ? { y: minY }
+                ? { y: anchor.y }
                 : mode === "center"
                   ? {
                       x: Math.round(
@@ -304,13 +307,52 @@ export function useEditor() {
     notice.value =
       "Rennbildschirm geladen. Original bleibt bis zum Speichern unverändert.";
     canRecover.value = false;
+    hasDocument.value = true;
+    documentRevision.value++;
+    rememberCurrent();
+  }
+  function rememberCurrent() {
+    if (!path.value) return;
+    recent.remember({
+      path: path.value,
+      native: isTauri(),
+      width: doc.value.width,
+      height: doc.value.height,
+      source: source.value,
+    });
+  }
+  async function openRecent(entry: RecentDocument) {
+    if (entry.native) {
+      await open(entry.path);
+      return;
+    }
+    if (busy.value || !(await mayDiscard())) return;
+    if (!entry.source) {
+      await open();
+      return;
+    }
+    try {
+      load({
+        path: entry.path,
+        source: entry.source,
+        encoding: "utf-8",
+        hash: "",
+        assets: {},
+        warnings: [
+          "Browser-Verlauf: lokale Vorschaukopie. Für den aktuellen Dateistand die XML-Datei erneut öffnen.",
+        ],
+      });
+    } catch (err) {
+      error.value = String(err);
+    }
   }
   async function open(filePath?: string) {
-    if (busy.value || !(await mayDiscard())) return;
+    if (busy.value) return;
     if (!isTauri()) {
       document.getElementById("browser-file")?.click();
       return;
     }
+    if (!(await mayDiscard())) return;
     busy.value = true;
     try {
       const data = await invoke<Opened | null>("open_document", {
@@ -324,6 +366,7 @@ export function useEditor() {
     }
   }
   async function browserFile(file: File) {
+    if (busy.value || !(await mayDiscard())) return;
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
       const header = new TextDecoder().decode(bytes.slice(0, 200));
@@ -363,6 +406,7 @@ export function useEditor() {
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
         savedSource.value = source.value;
         notice.value = "XML-Kopie heruntergeladen (UTF-8).";
+        rememberCurrent();
         return;
       }
       busy.value = true;
@@ -401,6 +445,7 @@ export function useEditor() {
         : "Gespeichert.";
       error.value = "";
       canRecover.value = false;
+      rememberCurrent();
     } catch (e) {
       error.value = String(e);
     } finally {
@@ -408,7 +453,7 @@ export function useEditor() {
     }
   }
   async function newDocument(
-    kind: "blank" | "race",
+    kind: TemplateKind,
     width: number,
     height: number,
     slots: number,
@@ -428,6 +473,8 @@ export function useEditor() {
     future.value = [];
     error.value = "";
     canRecover.value = false;
+    hasDocument.value = true;
+    documentRevision.value++;
     return true;
   }
   async function refreshLibrary(choose = false) {
@@ -500,6 +547,8 @@ export function useEditor() {
       canRecover.value = false;
       await refreshAssets();
       notice.value = "Letzten ungespeicherten Stand wiederhergestellt.";
+      hasDocument.value = true;
+      documentRevision.value++;
     } catch (e) {
       error.value = String(e);
     }
@@ -520,6 +569,12 @@ export function useEditor() {
       });
   }
   return {
+    recentDocuments: recent.documents,
+    removeRecent: recent.remove,
+    setRecentThumbnail: recent.setThumbnail,
+    openRecent,
+    hasDocument,
+    documentRevision,
     source,
     doc,
     selected,
