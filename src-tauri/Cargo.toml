@@ -1,6 +1,6 @@
 [package]
 name = "rbs-studio"
-version = "1.0.0"
+version = "1.0.1"
 description = "Visueller Cockpit-XP Rennbildschirm-Editor"
 edition = "2021"
 

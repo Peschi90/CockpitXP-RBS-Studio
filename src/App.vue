@@ -420,7 +420,7 @@ onUnmounted(() => {
         <Home :size="19" />
       </button>
       <div class="brand">
-        <img class="brand-mark" src="/cockpit-xp-logo.png" alt="Cockpit-XP" />
+        <img class="brand-mark" src="/rbs-studio-logo.png" alt="RBS Studio" />
         <div>
           <strong>RBS <span>STUDIO</span></strong
           ><small>COCKPIT-XP EDITOR</small>

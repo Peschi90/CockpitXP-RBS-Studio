@@ -1,6 +1,6 @@
 # RBS Studio
 
-**Version 1.0.0**
+**Version 1.0.1**
 
 Mit RBS Studio gestaltest du Rennbildschirme für Cockpit-XP. Du kannst vorhandene RBS öffnen, Texte und Anzeigen verschieben, eigene Layouts aus Vorlagen erstellen und sie mit einem simulierten Rennen ausprobieren.
 
