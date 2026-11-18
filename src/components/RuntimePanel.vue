@@ -2,7 +2,11 @@
 import AddonPanel from "./AddonPanel.vue";
 import { ref, onUnmounted } from "vue";
 import { invoke, isTauri } from "@tauri-apps/api/core";
-import { resetSimulation, type Simulation } from "../core/simulator";
+import {
+  issuePitPenalty,
+  resetSimulation,
+  type Simulation,
+} from "../core/simulator";
 import type { RbsDocument, XmlNode } from "../core/xml";
 import { applySnapshot, type Snapshot } from "../core/live";
 import { fireEvent, bindingKey } from "../core/runtime";
@@ -113,7 +117,15 @@ onUnmounted(stop);
           min="1" /></label
       ><button @click="fireEvent(sim, doc.elements, slot, event)">
         Ereignis auslösen</button
-      ><button @click="sim.drivers[slot - 1]!.penalty = 30">30 s Strafe</button
+      ><button
+        :disabled="
+          sim.live ||
+          sim.phase === 'finish' ||
+          sim.drivers[slot - 1]!.disqualified
+        "
+        @click="issuePitPenalty(sim, sim.drivers[slot - 1]!, 30)"
+      >
+        30 s Strafe</button
       ><label
         >Rennzeit (s)<input
           v-model.number="sim.duration"

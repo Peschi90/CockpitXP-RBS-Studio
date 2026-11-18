@@ -7,6 +7,7 @@ import {
   deleteNodes,
   geometry,
   geometryAttributes,
+  inheritedAttributes,
   insertXml,
   setText,
   type XmlNode,
@@ -15,7 +16,7 @@ import { elementXml, sectionFor } from "./catalog";
 import { createTemplate, type TemplateKind } from "./templates";
 import { withGridColumns } from "./runtime";
 import { createSimulation } from "./simulator";
-import { layoutGeometry } from "./text-layout";
+import { layoutGeometry, textReserveLength } from "./text-layout";
 import { useRecentDocuments, type RecentDocument } from "./recent-documents";
 export interface Opened {
   path: string;
@@ -174,7 +175,19 @@ export function useEditor() {
     if (active.value)
       commit(
         setAttributes(doc.value, [
-          { node: active.value, attrs: geometryAttributes(active.value, g) },
+          {
+            node: active.value,
+            attrs: {
+              ...geometryAttributes(active.value, g),
+              ...(g.width !== undefined &&
+              textReserveLength(
+                active.value,
+                inheritedAttributes(active.value, doc.value),
+              ) > 0
+                ? { len: 0 }
+                : {}),
+            },
+          },
         ]),
       );
   }
@@ -558,9 +571,13 @@ export function useEditor() {
     recovery = undefined;
     localStorage.removeItem(recoveryKey);
   }
-  async function installCloseGuard() {
+  async function installCloseGuard(blocked = () => false) {
     if (isTauri())
       return getCurrentWindow().onCloseRequested(async (event) => {
+        if (blocked()) {
+          event.preventDefault();
+          return;
+        }
         if (dirty.value || busy.value) {
           event.preventDefault();
           if (!busy.value && (await mayDiscard()))

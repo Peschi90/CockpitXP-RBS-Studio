@@ -191,6 +191,27 @@ it("broadcasts box penalties, serves tenths of seconds only in the pit, and rest
   tick(s, 1);
   expect(d.fuel).toBeGreaterThan(40);
 });
+it("queues AddOn penalties and keeps each deadline and post-service fuel lock", () => {
+  const { sim, engine } = run(`begin
+    cpAddOnBoxenStrafe2(Cockpit.FahrerName,3,20,0,False,0,False);
+    cpAddOnBoxenStrafe2(Cockpit.FahrerName,0,10,1,False,0,True);
+    cpAddOnBoxenStrafe2(Cockpit.FahrerName,3,10,0,False,0,True);
+  end.`);
+  expect(engine.state.error).toBe("");
+  const d = sim.drivers[0]!;
+  sim.running = true;
+  expect(d.boxPenalties.map((p) => p.duration)).toEqual([2, 1, 1]);
+  d.laps = 1;
+  tick(sim, 0.1);
+  expect(d.laps).toBe(0);
+  expect(d.boxPenalties.map((p) => p.duration)).toEqual([2, 1]);
+  d.pit = true;
+  d.fuel = 50;
+  tick(sim, 8);
+  expect(d.boxPenalty).toBeNull();
+  expect(d.fuel).toBe(50);
+  expect(d.refuelWait).toBe(0);
+});
 it("routes sensor station and simulator button actions", () => {
   const { engine, sim } = run(
     "begin cpSimulateButton(3);cpSetIntegerVar('target',cpGetTargetTime);end.",

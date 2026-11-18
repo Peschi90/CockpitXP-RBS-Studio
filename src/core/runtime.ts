@@ -1,4 +1,8 @@
-import { driverFor, type Simulation } from "./simulator";
+import {
+  driverFor,
+  refuelCountdownPercent,
+  type Simulation,
+} from "./simulator";
 import type { XmlNode } from "./xml";
 export const bindingKey = (n: XmlNode) =>
   `${n.attrs.addonvariablename || n.tag}:${n.attrs.nr || 0}`;
@@ -36,11 +40,17 @@ export function fireEvent(
     if (Number(n.attrs.audioid_aus) === event) s.symbols[n.id] = false;
   }
 }
+export function tankBarCountdown(n: XmlNode, s: Simulation) {
+  return n.tag === "tankbar" && s.enabled && !s.live
+    ? refuelCountdownPercent(driverFor(n, s))
+    : null;
+}
 export function barPercent(n: XmlNode, s: Simulation) {
   if (!s.enabled) return 100;
   const override = s.barValues[bindingKey(n)];
   const d = driverFor(n, s);
   let value =
+    tankBarCountdown(n, s) ??
     override ??
     (n.tag === "progressbar" && n.attrs.typ?.toLowerCase() === "addonbar"
       ? Number(
@@ -56,7 +66,9 @@ export function barPercent(n: XmlNode, s: Simulation) {
           ? 100 - (s.elapsed / s.duration) * 100
           : (s.elapsed / s.duration) * 100
         : n.attrs.typ?.startsWith("strafe")
-          ? (d.penalty / 30) * 100
+          ? ((d.boxPenalty?.remaining ?? d.keyPenaltyRemaining) /
+              (d.boxPenalty?.duration || 30)) *
+            100
           : 0);
   return Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0));
 }

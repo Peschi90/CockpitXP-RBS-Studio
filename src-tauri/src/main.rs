@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod integrations;
 mod text_metrics;
+mod updates;
 use base64::{engine::general_purpose::STANDARD, Engine};
 use quick_xml::{events::Event, Reader};
 use serde::{Deserialize, Serialize};
@@ -540,7 +541,10 @@ async fn confirm_discard() -> bool {
 }
 fn main() {
     tauri::Builder::default()
+        .manage(updates::UpdateState::default())
         .invoke_handler(tauri::generate_handler![
+            updates::check_for_update,
+            updates::install_update,
             integrations::open_addon,
             integrations::list_installed_addons,
             integrations::load_installed_addon,

@@ -21,10 +21,20 @@ import {
   type XmlNode,
 } from "../core/xml";
 import { displayText, driverFor, type Simulation } from "../core/simulator";
-import { fieldSample, fontRequest, measureRbsText } from "../core/text-layout";
+import {
+  fieldSample,
+  fontRequest,
+  measureRbsText,
+  textFieldSize,
+} from "../core/text-layout";
 import ColorKeyImage from "./ColorKeyImage.vue";
 import DataGrid from "./DataGrid.vue";
-import { symbolVisible, barPercent, bindingKey } from "../core/runtime";
+import {
+  symbolVisible,
+  barPercent,
+  bindingKey,
+  tankBarCountdown,
+} from "../core/runtime";
 import {
   selectionBounds,
   snapMove,
@@ -127,19 +137,20 @@ const rendered = computed(() =>
         driverFor(n, props.sim).pictures[n.tag] ||
         props.assets[a.file || a.symbolname || ""];
       const natural = imageSizes.value[image || ""];
+      const textSize = textFieldSize(n, a, field);
       const width =
-        "breite" in a || "x2" in a
-          ? g.width
-          : type === "text"
-            ? Math.max(1, field.width)
+        type === "text"
+          ? textSize.width
+          : "breite" in a || "x2" in a
+            ? g.width
             : type === "image"
               ? (natural?.width ?? g.width)
               : g.width;
       const height =
-        "hoehe" in a || "y2" in a
-          ? g.height
-          : type === "text"
-            ? field.height
+        type === "text"
+          ? textSize.height
+          : "hoehe" in a || "y2" in a
+            ? g.height
             : type === "image"
               ? (natural?.height ?? g.height)
               : g.height;
@@ -148,9 +159,12 @@ const rendered = computed(() =>
           selected && drag.value && !drag.value.resize
             ? drag.value
             : { dx: 0, dy: 0 };
+      const boundNode = { ...n, attrs: a };
+      const waiting = tankBarCountdown(boundNode, props.sim) !== null;
       return {
         n,
         a,
+        waiting,
         x: g.x + offset.dx,
         y: g.y + offset.dy,
         width:
@@ -205,21 +219,22 @@ const rendered = computed(() =>
         lineWidth: Number(a.w) || 0,
         selected,
         visible: n.tag !== "symbole_einaus" || symbolVisible(n, props.sim),
-        barColor:
-          props.sim.barColors[bindingKey(n)] ||
-          props.sim.addonColors[
-            `bar:${a.addonvariablename}:${Number(a.nr) === 0 ? 0 : slot}`
-          ] ||
-          toCssColor(
-            n.tag === "tankbar" &&
-              driverFor(n, props.sim).fuel <= props.sim.reserve
-              ? a.tc
-              : a.nc,
-            slot,
-            "#b9e66b",
-            palette,
-          ),
-        percent: barPercent(n, props.sim),
+        barColor: waiting
+          ? "#000000"
+          : props.sim.barColors[bindingKey(n)] ||
+            props.sim.addonColors[
+              `bar:${a.addonvariablename}:${Number(a.nr) === 0 ? 0 : slot}`
+            ] ||
+            toCssColor(
+              n.tag === "tankbar" &&
+                driverFor(n, props.sim).fuel <= props.sim.reserve
+                ? a.tc
+                : a.nc,
+              slot,
+              "#b9e66b",
+              palette,
+            ),
+        percent: barPercent(boundNode, props.sim),
       };
     }),
 );
@@ -236,7 +251,7 @@ function down(event: PointerEvent, n: XmlNode, resize = false) {
     ids = [n.id];
     emit("select", ids);
   }
-  const g = geometry(n);
+  const g = rendered.value.find((r) => r.n.id === n.id)!;
   const rects = rendered.value.filter((r) => ids.includes(r.n.id));
   if (!rects.length) return;
   guides.value = [];
@@ -540,7 +555,7 @@ defineExpose({ fit, thumbnail });
             <rect
               :width="r.width"
               :height="r.height"
-              :fill="'transparent'"
+              :fill="r.waiting ? '#c5cbd0' : 'transparent'"
               :stroke="toCssColor(r.a.lc)"
               :stroke-width="Number.parseInt(r.a.lc || '0', 16) ? 1 : 0"
             />

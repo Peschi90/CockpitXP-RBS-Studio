@@ -341,5 +341,12 @@
     "height": 36,
     "baseline": 29,
     "width": 154
+  },
+  {
+    "family": "Arial",
+    "emSize": 31,
+    "height": 36,
+    "baseline": 29,
+    "width": 2320
   }
 ]

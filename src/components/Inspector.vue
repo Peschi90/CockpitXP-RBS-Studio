@@ -12,6 +12,12 @@ import {
 import { driverFor, type Simulation } from "../core/simulator";
 import { label } from "../core/catalog";
 import {
+  isTextField,
+  layoutGeometry,
+  supportsTextLength,
+  textReserveLength,
+} from "../core/text-layout";
+import {
   SlidersHorizontal,
   ImagePlus,
   Copy,
@@ -40,10 +46,19 @@ const emit = defineEmits<{
   remove: [];
   repeat: [];
 }>();
-const g = computed(() => (props.node ? geometry(props.node) : undefined)),
+const g = computed(() =>
+    props.node ? layoutGeometry(props.node, props.doc) : undefined,
+  ),
   a = computed(() =>
     props.node ? inheritedAttributes(props.node, props.doc) : {},
   );
+const textField = computed(() => !!props.node && isTextField(props.node));
+const lengthSupported = computed(
+  () => !!props.node && supportsTextLength(props.node),
+);
+const reserved = computed(() =>
+  props.node ? textReserveLength(props.node, a.value) : 0,
+);
 const color = (value?: string) => {
   const driver = props.node
     ? driverFor({ ...props.node, attrs: a.value }, props.sim)
@@ -121,7 +136,7 @@ const isImage = computed(
           /></label>
         </div>
       </section>
-      <section v-if="!g.sized" class="property-section">
+      <section v-if="textField" class="property-section">
         <h3>{{ node.tag === "text" ? "Text" : "Vorschautext" }}</h3>
         <textarea
           aria-label="Elementtext"
@@ -371,7 +386,7 @@ const isImage = computed(
               max="8"
               :value="a.nr || 0"
               @change="attr('nr', $event)" /></label
-          ><label v-if="!g.sized"
+          ><label v-if="textField"
             ><span>NKS</span
             ><input
               aria-label="Nachkommastellen"
@@ -395,7 +410,7 @@ const isImage = computed(
             placeholder="z. B. PC_StatusText"
             @change="attr('addonvariablename', $event)"
         /></label>
-        <div v-if="!g.sized" class="field-grid">
+        <div v-if="textField" class="field-grid">
           <label
             ><span>Vor</span
             ><input
@@ -407,7 +422,7 @@ const isImage = computed(
           /></label>
         </div>
       </section>
-      <section v-if="!g.sized && node.tag !== 'text'" class="property-section">
+      <section v-if="textField && node.tag !== 'text'" class="property-section">
         <h3>Format</h3>
         <label class="stack-label"
           >Messstelle / Historienposition<input
@@ -415,13 +430,27 @@ const isImage = computed(
             :value="a.mst || 0"
             @change="attr('mst', $event)"
         /></label>
-        <label class="stack-label"
+        <label v-if="lengthSupported" class="stack-label"
           >Platzhalterlänge<input
+            aria-label="Platzhalterlänge"
             type="number"
             min="0"
+            max="10000"
             :value="a.len || 0"
             @change="attr('len', $event)"
         /></label>
+        <p v-if="lengthSupported" class="muted">
+          Reserviert Platz für diese Anzahl Zeichen. 0 verwendet die feste
+          Breite oder den Vorschautext.{{
+            reserved && g.sized
+              ? " Die Platzhalterlänge steuert aktuell die Breite; eine manuelle Breitenänderung setzt sie auf 0."
+              : ""
+          }}
+        </p>
+        <p v-else class="muted">
+          Bei Zahlen und Zeiten bestimmt der Vorschautext das Feldformat und die
+          automatische Breite.
+        </p>
         <label class="stack-label"
           >Option<input
             :value="a.option || ''"

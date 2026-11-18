@@ -1,168 +1,243 @@
 # RBS Studio
 
-Eigenständiger Windows-Editor für Cockpit-XP-Rennbildschirme. Version **0.6.0 Preview**. Schwerpunkt: vorhandene RBS bearbeiten und ihre XML-Struktur erhalten. Keine Installation in Cockpit-XP erforderlich.
+**Version 1.0.0**
 
-## Neu in 0.6.0
+Mit RBS Studio gestaltest du Rennbildschirme für Cockpit-XP. Du kannst vorhandene RBS öffnen, Texte und Anzeigen verschieben, eigene Layouts aus Vorlagen erstellen und sie mit einem simulierten Rennen ausprobieren.
 
-- **Intelligente Hilfslinien:** Beim Verschieben rasten linke/rechte/obere/untere Kanten und Mittelpunkte an anderen sichtbaren Elementen und der Arbeitsfläche ein. Lila Linien zeigen die Ausrichtung. Die Toleranz beträgt sechs Bildschirmpixel unabhängig vom Zoom. Für Texte gelten die gemessenen Feldgrößen, für Mehrfachauswahlen der gemeinsame Rahmen; Abstände innerhalb der Auswahl bleiben erhalten. Ein Ziehen ist mit einem Schritt rückgängig zu machen. Escape bricht ab.
-- **Abschaltbar:** Der Fadenkreuz-Schalter „Intelligente Hilfslinien“ in der Werkzeugleiste schaltet die Funktion dauerhaft an/aus und merkt sich die Wahl lokal. Alt übergeht während des Ziehens Hilfslinien und Raster. Das bisherige 8-Pixel-Raster bleibt unabhängig über das Magnet-Symbol schaltbar. Hilfslinien sind reine Editorhilfen und werden nicht in RBS-Dateien oder Vorschaubilder geschrieben. Größenänderungen verwenden weiterhin nur das optionale Raster.
-- **Zwölf gestaltete Vorlagen:** Club Race, Timing Pro, Qualifying, Langstrecke, Großanzeige, Fahrer-Karten, Boxenmauer, Race TV, Duell, Boxenmonitor, Tageslicht und Retro Timing, zusätzlich eine leere Arbeitsfläche. Der Dialog zeigt echte Layoutvorschauen, die auf Fahreranzahl und Auflösung reagieren. Beim Erstellen werden Elemente für 1–8 Fahrer aufgebaut. Alle Felder bleiben einzeln editierbar, ohne zusätzliche Bilddateien oder AddOns. Bei einem bereits erstellten RBS baut ein späteres Ändern der Fahreranzahl das Layout weiterhin nicht automatisch um.
-- **Zoom bleibt erhalten:** Verschieben, Bearbeiten und Rückgängig setzen den gewählten Zoom nicht mehr auf „Einpassen“ zurück.
+[Für Windows herunterladen](https://github.com/Peschi90/CockpitXP-RBS-Studio/releases/latest) · [Installation](#installation) · [Erste Schritte](#erste-schritte) · [Bedienung](#elemente-bearbeiten) · [Rennsimulation](#rennsimulation) · [Hilfe](#hilfe-bei-problemen)
 
-## Neu in 0.5.0
+![Startseite von RBS Studio mit den Schaltflächen zum Erstellen und Öffnen eines Rennbildschirms](docs/images/startseite.png)
 
-- **Startdashboard:** Beim Start erscheinen „Neuen RBS anlegen“, „RBS öffnen“ und bis zu zwölf zuletzt verwendete RBS mit Vorschaubildern. Der Verlauf wird lokal gespeichert. Die Windows-App lädt beim Wiederöffnen stets die aktuelle Datei; fehlende oder verschobene Dateien werden als Fehler angezeigt. Ein Eintrag kann entfernt werden, ohne die Datei zu löschen. Der Verlauf füllt sich ab dieser Version beim Öffnen und Speichern.
-- **Zurück zur Startseite:** Das Haus-Symbol öffnet das Dashboard. Das aktuelle Dokument, seine Auswahl und ungespeicherte Änderungen bleiben erhalten. „Zurück zu …“ setzt die Arbeit fort. Eine laufende Simulation pausiert beim Wechsel auf die Startseite.
-- **Mausrad-Zoom:** Über der RBS-Arbeitsfläche vergrößert das Mausrad nach oben und verkleinert nach unten (10–300 %). Bei gescrollten Flächen bleibt die Stelle unter dem Mauszeiger stehen; an den Scrollgrenzen begrenzt der sichtbare Bereich die Verschiebung. Die Seitenleisten scrollen weiterhin normal.
-- **Ausrichten am ersten Element:** Mehrere Elemente mit Umschalt/Ctrl + Klick auswählen. „Horizontal ausrichten“ übernimmt nur die Y-Position des zuerst ausgewählten Elements. „Vertikal ausrichten“ übernimmt nur dessen X-Position. Dieses Bezugselement erhält einen orangefarbenen Rahmen mit „1 · Bezug“ und die Markierung „1“ in der Ebenenliste. Wird es abgewählt, übernimmt das nächste Element in der Auswahlreihenfolge. Änderungen lassen sich mit einem Schritt rückgängig machen.
+## Installation
 
-Vorschaubilder werden aus dem geöffneten/gespeicherten Stand erstellt und enthalten keine Auswahlrahmen. Nicht gespeicherte Änderungen ersetzen keine Dateivorschau. Die Browser-Demo speichert kleine lokale Vorschaukopien, da sie Dateien nicht selbstständig vom Laufwerk wiederöffnen darf; die Windows-App speichert im Verlauf Pfade und Vorschaubilder.
+1. Öffne die [Downloadseite](https://github.com/Peschi90/CockpitXP-RBS-Studio/releases/latest).
+2. Klappe bei Bedarf **Assets** auf und lade die Datei herunter, deren Name mit **x64-setup.exe** endet. Das ist der Installer für Windows-PCs mit 64-Bit-Intel- oder AMD-Prozessor.
+3. Öffne die heruntergeladene Datei und folge dem Installationsassistenten.
+4. Starte **RBS Studio** über das Windows-Startmenü.
 
-## Korrekturen in 0.4.1
+Alternativ kannst du die einzeln angebotene **RBS Studio.exe** herunterladen und direkt starten. GitHub kann im Dateinamen Punkte statt Leerzeichen anzeigen.
 
-- Die Bibliothek überspringt Cockpits automatisch erzeugten `ConvertRBS`-Cache. Eigene Varianten bleiben erhalten; der Cache kann bei Bedarf ausdrücklich als Bibliotheksordner ausgewählt werden. Es werden keine Dateien gelöscht.
-- Die Windows-App misst Schriften über GDI: positive/negative VCL-Fonthöhe, interne Schriftabstände, Grundlinie, tatsächliche Feldbreite und Windows-Ersatzschrift. CSS-Schätzwerte (`fh * 1.24`, Grundlinie `fh * 0.94`) entfallen. Die reine Browser-Vorschau verwendet weiterhin näherungsweise Browser-Schriftmaße.
-- Zentrierte/rechtsbündige Variablen orientieren sich am gespeicherten Platzhalter. `len` ersetzt vorhandene Zahlen- und Zeitformate nicht mehr durch eine Folge Nullen. Feldgrenzen bleiben bei wechselnden Simulationswerten stabil; Variablen werden an ihren Feldgrenzen abgeschnitten.
-- Textausrichtung auf die Bildschirmmitte nutzt die gemessene Feldbreite statt einer pauschalen Breite von 140 Pixeln.
-- Das Koordinatenattribut `links` bei `symbole_einaus` wird gelesen und beim Verschieben in dieser Schreibweise erhalten.
-- Bitmaps ohne explizite Abmessungen verwenden ihre natürliche Bildgröße. Beim Verschieben werden keine geschätzten Endkoordinaten in die XML geschrieben.
-- Im Modus **Originaltexte anzeigen** gelten die Slot-Standardfarben (`fdc` / `dc`) des Designers. Flächen und Rahmen verwenden die Zeichenfarbe `c`; `dc` ist keine separate Rahmenfarbe. Balken werden wie in der Cockpit-Designansicht voll dargestellt.
+Zum Herunterladen und gegebenenfalls Nachinstallieren benötigter Komponenten brauchst du Internet. Anschließend kannst du lokal an deinen Rennbildschirmen arbeiten. RBS Studio wird als eigenes Programm installiert.
 
-Abgleich: Nutzer-Screenshot des Cockpit-Designers mit `cockpit/6 Fahrer/Cp-6S-07 Rennen 1920x1080/Rennen.xml`. Native Windows-Maße: Arial Fett `9999`, fh=96 → Feld 184 × 96, Grundlinie 77, em=83; `MMM`, fh=72 → 159 × 72; `120:00`, fh=160 → 432 × 160. Automatisierte UI-Prüfungen speisen die auf diesem Windows-System gemessenen GDI-Werte ein und prüfen die unveränderte XML-Datei. Ein vollständiger Vergleich jedes Bildpixels ist damit nicht behauptet: WebView2/SVG und Cockpit können sich in Kantenglättung unterscheiden, und Cockpits interne Fahrer-/Fahrzeug-Demobilder sind nicht Teil der RBS-Datei.
+### Updates
 
-Technische Grundlagen: [Cockpit-RennDesigner, Platzhalter und Fonthöhe](https://wiki.cockpit-xp.de/xpdashboard/smart-xp/cp/CpXP-Doku-RennDesigner.pdf), [VCL Font.Height](https://docwiki.embarcadero.com/Libraries/Athens/en/Vcl.Graphics.TFont.Height), [Windows CreateFont](https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-createfontw).
+RBS Studio prüft bei jedem Start im Hintergrund, ob eine neuere Version bereitsteht.
 
-## Starten
+- **Jetzt aktualisieren** lädt den Installer und startet ihn. RBS Studio schließt sich dafür. Folge anschließend dem Installationsassistenten.
+- **Speichern und aktualisieren** speichert vorher deine offenen Änderungen. Wird das Speichern abgebrochen oder schlägt es fehl, beginnt das Update erst nach erfolgreichem Speichern.
+- **Später** verschiebt das Update. Beim nächsten Programmstart wird wieder geprüft.
 
-Im Ordner `release/0.6.0` liegt `RBS Studio.exe` zum direkten Start. Alternativ installiert `RBS Studio_0.6.0_x64-setup.exe` die Anwendung für den aktuellen Windows-Benutzer. Die Anwendung verwendet Microsoft Edge WebView2; der Installer kann eine fehlende Laufzeit nachinstallieren. Die EXE ist nicht digital signiert.
+Während des Downloads siehst du den Fortschritt. Bei einem Downloadfehler kannst du es erneut versuchen oder später weiterarbeiten. Ohne Internet startet deine installierte Version ohne Meldung.
 
-1. **Öffnen** wählt eine `Rennen.xml`, `Startampel.xml`, einen anderen Rennbildschirm oder ein RBS-Overlay aus.
-2. Der Bibliothek-Reiter durchsucht zunächst `C:\ProgramData\Cockpit-V2\RennBildschirm`. Über **Ordner wählen** lässt sich ein anderes Datenverzeichnis auswählen.
-3. Elemente auf der Arbeitsfläche oder in der Ebenenliste auswählen. Eigenschaften rechts bearbeiten oder Elemente ziehen.
-4. **Speichern unter** ist über den Pfeil neben **Speichern** oder `Strg+Umschalt+S` erreichbar. Für eine eigenständige Kopie einen neuen, leeren RBS-Ordner wählen und die Datei z. B. `Rennen.xml` nennen.
-5. Den gespeicherten Bildschirm anschließend in Cockpit-XP öffnen und die Darstellung kontrollieren.
+## Erste Schritte
 
-## Bearbeiten
+### Einen vorhandenen RBS bearbeiten
 
-- Visuelle Arbeitsfläche mit Zoom, Einpassen, Raster und Einrasten auf 8 Pixel. Alt beim Ziehen übergeht das Raster.
-- Texte, Variablen, Flächen, Rahmen, Linien, Bilder, Symbole und Balken auswählen und bearbeiten.
-- Umschalt/Ctrl + Klick für Mehrfachauswahl; gemeinsam verschieben, duplizieren, löschen oder ausrichten.
-- Pfeiltasten bewegen um 1 Pixel, mit Umschalt um 10 Pixel.
-- Größenanfasser an Formen und Bildern; exakte Koordinaten und Maße im Eigenschaftenbereich.
-- Schrift, Größe, Fett/Kursiv, Ausrichtung, Farbe, Spur, Sortierung und AddOn-Name bearbeiten.
-- Die Schaltfläche **Für weitere Spur kopieren** kopiert eine Auswahl mit neuer Spur-ID und vertikalem Abstand. AddOn-Namen werden unverändert kopiert; doppelte Namen werden als Prüfhinweis angezeigt.
-- **Alle XML-Attribute** und der XML-Editor ermöglichen den Zugriff auf Eigenschaften ohne eigenen Bedienregler.
-- Rückgängig/Wiederholen mit `Strg+Z`, `Strg+Y` bzw. `Strg+Umschalt+Z` (bis zu 80 Schritte).
-- Neue RBS: leere Arbeitsfläche oder anpassbare Club-Race-Vorlage für 1–8 Fahrer, mit frei wählbarer Auflösung bis 16384 × 16384.
+1. Klicke auf der Startseite auf **RBS öffnen**.
+2. Wähle die Bildschirmdatei aus, zum Beispiel **Rennen.xml** oder **Startampel.xml**.
+3. Klicke auf ein Element auf der Arbeitsfläche.
+4. Bearbeite rechts unter **Eigenschaften** den Text, die Position, die Schrift oder die Farbe.
+5. Speichere deine Änderungen über **Speichern**. Für eine eigene Variante verwende **Speichern unter** über den kleinen Pfeil neben der Speichern-Schaltfläche.
 
-Die Ebenen bleiben in den ursprünglichen Cockpit-Sektionen `grafik`, `texte` und `variablen`. Eine beliebige Verschiebung zwischen diesen Sektionen ist nicht vorgesehen. Der XML-Editor kann die Quellreihenfolge bearbeiten.
+Die mit Cockpit-XP verwendeten Rennbildschirme findest du üblicherweise unter **C:\ProgramData\Cockpit-V2\RennBildschirm**. Öffne dort den Ordner des gewünschten Bildschirms und seine Bildschirmdatei.
 
-## Speichern und Wiederherstellen
+Über den Reiter **Bibliothek** kannst du die vorhandenen RBS direkt im Studio durchsuchen. Mit **Ordner wählen** wählst du ein anderes Verzeichnis aus.
 
-- Unbearbeitete XML-Bereiche werden nicht neu serialisiert. Attribute werden gezielt im ursprünglichen Quelltext geändert. Kommentare, unbekannte Elemente, unbekannte Attribute, Unterelemente und die ursprünglichen Koordinatenvarianten bleiben erhalten.
-- Bei unverändertem Speichern bleibt die Datei byteidentisch; es wird keine unnötige Sicherung erzeugt.
-- Beim Überschreiben einer geänderten Datei wird der vorherige Inhalt als `<Dateiname>.rbs-studio-<Zeitstempel>.bak` im selben Ordner gesichert. Die neue XML wird zunächst in eine temporäre Datei geschrieben, synchronisiert und anschließend ersetzt.
-- Ein SHA-256-Vergleich erkennt Änderungen oder Löschung seit dem Öffnen. In diesem Fall wird das Überschreiben abgebrochen. Die Änderung lässt sich unter einem anderen Namen sichern.
-- UTF-8 (auch mit BOM), ISO-8859-1 und Windows-1252 werden unterstützt. Die XML-Deklaration bestimmt die Ausgabecodierung. Zeichen außerhalb des gewählten Legacy-Zeichensatzes werden als XML-Zeichenreferenzen geschrieben. UTF-16 wird mit einer verständlichen Fehlermeldung abgewiesen.
-- **Speichern unter** kopiert die durch `bimage`, `file` und `symbolname` referenzierten Bilder mit. Vorhandene Bilder mit anderem Inhalt, fehlende Bilder oder nicht portable Bildpfade führen zum Abbruch der Kopie. Andere XML-Bildschirmdateien, Startampeln, Vorschau-JPGs und AddOns werden nicht automatisch mitkopiert.
-- Bilder lassen sich nach dem ersten Speichern importieren. Dabei wird kein vorhandenes anderes Bild überschrieben. Originale Cockpit-Formate PNG, JPEG und BMP sind zu bevorzugen.
-- Ein lokaler Wiederherstellungsstand wird bei Änderungen nach 500 ms gespeichert. Beim nächsten Start lässt sich dieser Stand wiederherstellen. Er ersetzt nicht das explizite Speichern der XML-Datei.
-- Vor Öffnen/Neuanlage/Schließen bei ungespeicherten Änderungen erscheint eine Rückfrage.
+### Auf der Startseite weiterarbeiten
 
-Die Anwendung arbeitet lokal. Nur bei ausdrücklich gestarteter Live-Verbindung fragt sie die angegebene Cockpit-Adresse ab; Rennbildschirmdateien werden nicht übertragen. Sie verändert keine Cockpit-Datenbank, AddOn-Skripte oder Hardwarekonfiguration.
+Unter **Zuletzt geöffnet** erscheinen bis zu zwölf Rennbildschirme mit kleinen Vorschaubildern. Klicke auf einen Eintrag, um ihn erneut zu öffnen. Das Kreuz an einem Eintrag entfernt ihn aus dem Verlauf.
 
-## Simulator und Vorschau
+Das Haus-Symbol oben links führt zurück zur Startseite. Über **Zurück zu …** setzt du die aktuelle Bearbeitung fort. Beim ersten Start ist der Verlauf noch leer.
 
-Der integrierte Simulator liefert Beispielwerte für Fahrer, Fahrzeuge, Runden, Rundenzeiten, Bestzeiten, Tank, Rennstatus, Abstände, Sektorzeiten und ausgewählte weitere Variablen. Renntempo 1×, 2×, 5× und 10×; Rennen, Chaos, Safety Car, Zieleinlauf; Boxenstopps mit Nachtanken. Ausgewählte AddOn-Textvariablen lassen sich manuell mit einem Vorschauwert belegen. Die Simulation ändert die XML-Datei nicht.
+## Einen neuen Rennbildschirm erstellen
 
-### Neu in 0.4: Erweiterte AddOn-Simulation
+![Vorlagenauswahl mit Layoutvorschauen sowie Einstellungen für Auflösung und Fahreranzahl](docs/images/vorlagen.png)
 
-1. **Simulator → Erweiterte Simulation → AddOn-Ausführung** öffnen.
-2. In der Windows-App **Installierte AddOns suchen** verwenden oder **AddOn laden…** wählen. Die Anwendung liest `AddOn.cps.xml`, `ConfigPackage.xml`, bis zu 32 RBS-Overlays und bis zu 64 Textdateien aus dem Paketordner. Quellen und Konfigurationen bleiben unverändert. Der Import akzeptiert auch das bei deinem Joker-Dialog vorgefundene XML mit `AddOn` als Wurzelelement.
-3. Konfiguration und Rennmodus vor dem Start einstellen. **AddOn starten** aktiviert das ausgewählte Paket. Bis zu acht Pakete können gleichzeitig geladen und gestartet werden. Über die Paket-Schaltflächen zwischen ihren Einstellungen und Ergebnissen wechseln.
-4. Runden, Boxenein-/ausfahrt und Rennstatus erzeugen automatisch Ereignisse. Weitere Ereignisse mit Spur, Parameter und **Sensor / Station** auslösen. Eingänge lassen sich umschalten; Y, J und L stehen als Schnellzugriff für Aufzeichnung, Joker-Dialog und Chaos-Test bereit.
-5. Dialoge erscheinen als schließbare Fenster mit funktionierenden Pascal-Callbacks. Diagramme zeigen aufgezeichnete Runden. Virtuelle Excel-/Datenbanktabellen und Textdateien lassen sich ansehen und explizit exportieren.
+1. Wähle **Neuen RBS anlegen** auf der Startseite oder **Neu** in der oberen Leiste.
+2. Wähle eine Vorlage oder **Leere Arbeitsfläche**.
+3. Stelle die gewünschte Auflösung und die Fahreranzahl von **1 bis 8** ein. Die Vorschauen passen sich daran an.
+4. Klicke auf **Rennbildschirm erstellen**.
+5. Speichere deinen Bildschirm in einem eigenen Ordner, zum Beispiel als **Rennen.xml**.
 
-Die Laufzeit unterstützt nun feste und dynamische Arrays einschließlich mehrerer Dimensionen, Array- und Listenindizes, `case` mit Bereichen, Zeichen wie `#13#10`, Ganzzahl-Bitoperationen, Referenzparameter, Prozedur-Callbacks und zusätzliche String-/Formatfunktionen. Vorhandene Schleifen, Routinen, `Result`, `Exit`, `Break`, `Continue` und `try/except/finally` bleiben unterstützt. `cpSleep` und Eingangspolling laufen kooperativ. Kritische Abschnitte können schlafen; andere Ereignisse warten auf ihre Freigabe. Grenzen für Skriptschritte, Speicher und Aufruftiefe bleiben aktiv.
+Diese zwölf gestalteten Vorlagen stehen zur Auswahl.
 
-Zusätzliche Cockpit-Funktionen umfassen Rennmodus/-status, Zielrunden/-zeit, Abstände, Gesamtzeit, Sensorstation, Slotfarben als Referenzausgabe, Boxenstrafen, Strafabbruch, Tastenstrafe, Tankensperre, CU-Geschwindigkeits-/Bremswerte, simulierte Rennsteuerung sowie dynamische und blinkende Subscreens. Reguläres Rennende meldet Status 3/4. `cpGetRacingStatus` liefert R/S/P; T/Q/R gehören zu `cpGetRacingMode`. Boxen-Standzeiten werden als Zehntelsekunden interpretiert und im Simulator in der Box abgebaut. Die Tastenstrafe ist als eigene Simulationsvorgabe einstellbar; sie wird nicht aus dem Cockpit-StartCenter importiert. CU-Werte wirken bei der nächsten Start/Ziel-Überfahrt, die Fast-Geschwindigkeitsvariante sofort. Der Geschwindigkeitswert beeinflusst das vereinfachte Fahrmodell; der Bremswert wird als Zustand geführt.
+| Vorlage | Geeignet für |
+| --- | --- |
+| Club Race | Übersichtliche Fahrerzeilen mit Fahrzeug, Zeiten und Tank |
+| Timing Pro | Eine breite Zeitentabelle mit Abständen |
+| Qualifying | Einen Schwerpunkt auf Bestzeiten |
+| Langstrecke | Restzeit, Tankbalken und Tankstopps |
+| Großanzeige | Große Werte zum Ablesen aus der Entfernung |
+| Fahrer-Karten | Eine eigene Kachel je Fahrer |
+| Boxenmauer | Senkrechte Fahrerspalten zum Vergleichen |
+| Race TV | Eine kompakte Fahrerübersicht neben Zeit und Rennstatus |
+| Duell | Zwei gegenüberliegende Spalten |
+| Boxenmonitor | Tank, Stopps und Boxenstrafen |
+| Tageslicht | Eine helle Ergebnistafel |
+| Retro Timing | Eine bernsteinfarbene Rennanzeige |
 
-Package-Variablen sind getrennt; `cp*VarG` und das virtuelle Dateisystem sind zwischen gleichzeitig laufenden Paketen geteilt. Relative Pfade wie `..\Pace-Car-Handling\SCU-Phase.txt` funktionieren zwischen nativ geladenen Paketen. Overlays erhalten ihre eigenen Package-Werte; `scriptVariablePackage`/`scriptVariable` und dynamische Spur `nr="-2"` werden dargestellt. Beim Stoppen eines Pakets bleiben die Ausgaben der anderen Pakete erhalten, soweit diese unter eigenen Namen geschrieben wurden. Bei identischen RBS-Variablennamen gilt die letzte Ausgabe.
+### Fahreranzahl bei einem bestehenden RBS
 
-`TStringList` und `TFileStream` arbeiten ausschließlich auf virtuellen Dateien. `TForm`, `TButton`, `TLabel`, `TChart` und `TLineSeries` werden in der Vorschau nachgebildet. `CreateOleObject('Excel.Application')` liefert eine virtuelle Tabelle, und `TADOQuery.ExecSQL` unterstützt die einfache `INSERT INTO … VALUES`-Form des installierten Access-Demos als virtuelle Datentabelle. Es startet weder Office noch eine Datenbankverbindung. Sprache, Sound und Audioereignisse erscheinen im Protokoll. Skripte haben keinen direkten Zugriff auf Dateisystem, Betriebssystem, Netzwerk oder Hardware.
+**Fahrer / Spuren** in den allgemeinen Eigenschaften legt fest, für wie viele Fahrer der Bildschirm gedacht ist. Zusätzliche Fahrerzeilen legst du im bestehenden Layout selbst an. Beim Erstellen aus einer Vorlage werden sie passend zur gewählten Fahreranzahl aufgebaut.
 
-**Prüfung:** 28 lokal installierte Pakete mit 79 ausführbaren Ereignisskripten wurden eingelesen und in einem gemeinsamen Testszenario pro Paket ausgeführt. Zwei zusätzliche XML-Konfigurationsblöcke des Joker-AddOns enthalten keinen ausführbaren Pascal-Code. Der maschinenlesbare Bericht liegt unter `reports/addon-compatibility.json`; der verständliche Prüfbericht liegt bei der Windows-Ausgabe. Zusätzlich wurden originale Pace-Car-Abläufe, Joker-Plus/Minus-Callbacks, Regenbeginn/-ende, CU-Werte und die gegenseitige Sperre zwischen Regen- und Schadenssimulation geprüft. Die Prüfung bestätigt diese Abläufe, keine vollständige Zweigabdeckung oder Gleichheit mit der Cockpit-Laufzeit.
+Um einen vorhandenen RBS zu erweitern, markiere die Elemente einer Fahrerzeile und verwende **Für weitere Spur kopieren…**. Wähle die **Zielspur** und den vertikalen **Abstand Y**. Passe danach bei Bedarf Positionen, Hintergrundflächen und Bildschirmhöhe an.
 
-**Verbleibende Grenzen:** keine kompilierten `.ilc`-Dateien, eigenen Klassen/Records, DLLs, beliebigen COM-Objekte, allgemeine SQL-Abfragen oder vollständige VCL-/TeeChart-Nachbildung. `TBarSeries`-Daten werden derzeit in der Diagrammvorschau als Linie dargestellt. Rennphysik, Sensoren, Startampel und Strafen sind vereinfachte Modelle. Audio bleibt ein Protokolleintrag. `Now` verwendet eine virtuelle Zeit ab 1970, `FormatDateTime` die gebräuchlichen numerischen Formate. Customer1–3-Symbole benötigen bei numerischer RBS-Zuordnung die passenden Ein-/Aus-IDs unter **Standard-Symbole zuordnen**; Motor-/Bremsschaden sind vorbelegt. Unterordner-Overlays, externe Assets und binäre Dateien werden nicht als AddOn-Dateien importiert. Unbekannte ausgeführte Befehle melden Ereignis und Zeile; sie werden nicht stillschweigend übersprungen. Eine Live-Verbindung stoppt die lokale AddOn-Ausführung.
+## Elemente bearbeiten
 
-Im installierten `mp\Cp-ChaosHandlingCU-Arduino_dialog` vergleicht der Quelltext teilweise `cpGetRacingStatus()` mit T/Q. Der Editor weist darauf hin. Diese Quelltextlogik wurde nicht umgeschrieben; für Training/Qualifikation muss das AddOn selbst `cpGetRacingMode()` abfragen.
+![Geöffneter Rennbildschirm mit ausgewähltem Fahrernamen, Ebenenliste links und Eigenschaften rechts](docs/images/editor.png)
 
-### Slot-Schriftfarbe und Slot-Hintergrund
+| Bereich | Bedienung |
+| --- | --- |
+| Obere Leiste | Neu anlegen, öffnen und speichern |
+| Werkzeugleiste | Rückgängig, Raster, Hilfslinien, Ausrichten, Zoom und Vorschau |
+| Ebenen links | Elemente auswählen, auch wenn sie sich überlagern |
+| Elemente links | Texte, Rennwerte, Bilder, Flächen, Linien und Balken hinzufügen |
+| Arbeitsfläche in der Mitte | Elemente auswählen und mit der Maus verschieben |
+| Eigenschaften rechts | Position, Größe, Schrift, Farbe und Spur bearbeiten |
 
-`slotcolor` bezeichnet die Slot-Schriftfarbe, `slotcolorbg` den Hintergrund. Beide Farben sind pro Spur getrennt einstellbar und folgen bei sortierter Darstellung dem Fahrer. Live werden `slotfarbefont` und `slotfarbeback` übernommen. Die Vorschau schreibt die ursprünglichen Farbattribute nicht um.
+### Auswählen, verschieben und vergrößern
 
-### Neu in 0.2
+- Klicke auf ein Element auf der Arbeitsfläche oder in der Ebenenliste.
+- Ziehe es mit gedrückter linker Maustaste an die gewünschte Stelle.
+- Verwende die Pfeiltasten für Schritte von **1 Pixel**, mit **Umschalt** für **10 Pixel**.
+- Trage rechts **X** und **Y** ein, wenn du eine genaue Position benötigst.
+- Bei Elementen mit veränderbarer Größe kannst du die Anfasser am Auswahlrahmen oder die Felder **B** und **H** verwenden.
+- Das Mausrad über der Arbeitsfläche zoomt hinein und heraus. **An Arbeitsbereich anpassen** zeigt den gesamten Bildschirm. Ein Klick auf die Prozentanzeige stellt **100 %** ein.
 
-- Ereignissymbole: Ein-/Aus-Ereignisse pro Spur auslösen, Sichtbarkeit manuell vorgeben; Ereignis-IDs im Eigenschaftenbereich bearbeiten.
-- Tank-, Rennzeit-, Straf- und AddOn-Balken mit getrennten Werten, horizontaler/vertikaler Darstellung, Reserve- und Rahmenfarbe. Vorschauwerte und Farben lassen sich pro Spur übersteuern.
-- DataGrid zeigt während der Simulation aufgezeichnete Runden. Spalten bleiben beim Duplizieren, Spurwechsel und Löschen eines Tabellenkopfs zusammen. CSV-Export ist im Modus **Vorschau** bedienbar. Spaltenattribute sind über die Ebenenliste/Alle XML-Attribute bearbeitbar.
-- Fahrer-/Fahrzeugbilder und Nationalflaggen aus der vorhandenen Cockpit-Datenbank: Simulator → **Erweiterte Simulation** → **Cockpit-Datenbank lesen**, Spur auswählen und Fahrer/Fahrzeug zuordnen. Die Datenbank wird ausschließlich lesend geöffnet.
-- Windows-Systemfarben werden aus der aktuellen Windows-Palette gelesen. Bitmap-Transparenzfarbe wird in der Vorschau angewendet (exakte Farbe, Bilder bis 16 Megapixel).
-- Rundenhistorie verwendet aufgezeichnete Runden; Optionen `R#`, `Z#`, `SR#`, `SZ#` trennen Runde/Zeit und sortieren nach schnellsten Zeiten. Rennzeit unterstützt Nachkommastellen und `option="h"`. `len` wird als Platzhalterbreite berücksichtigt. Zusätzliche Differenz-, Durchschnitts-, Straf- und Verbrauchswerte werden simuliert.
-- **Live-Daten verbinden** liest Status, Rundenzeiten, Positionen, Tankstände, Fahrernamen und Rennvorgaben über die Cockpit-API. Es werden ausschließlich GET-Anfragen gesendet. Unterbrechungen beenden die Verbindung mit einer Fehlermeldung; es werden keine Rennen oder Hardwareaktionen ausgelöst.
+Ein Klick auf eine freie Stelle hebt die Auswahl auf. Rechts erscheinen dann die allgemeinen Einstellungen des Rennbildschirms, etwa Auflösung, Fahreranzahl und Hintergrund.
 
-Für Live-Daten die API in Cockpit aktivieren und die dort konfigurierte Adresse im Simulator eintragen. Der vorbelegte Wert `http://localhost:8080` ist ein Beispiel. Der Live-Client wurde gegen einen lokalen Testserver geprüft; ein vollständiger Test gegen die laufende Cockpit-Instanz steht noch aus. Die Tabelle erfasst während der Verbindung beobachtete Runden, keine rückwirkend vollständige Rennhistorie. Bei ausgelassenen API-Abfragen können Zwischenrunden fehlen.
+### Neue Anzeigen hinzufügen und einem Fahrer zuordnen
 
-**Verbleibende Grenzen:** Die AddOn-Ausführung deckt den oben beschriebenen Teilumfang ab. Die normale Live-API liefert nicht alle AddOn-internen Zustände; diese lassen sich als Vorschauwerte, Balkenwerte und Symbolereignisse setzen. Direkte CU-/USB-Steuerung ist nicht enthalten. Sonderoptionen einzelner Variablen, Rekord-/Serienrennendaten, einige dynamische Bildarten, Symbol-Transparenzoptionen und spezielle Strafbalkendarstellungen sind noch nicht vollständig nachgebildet. DataGrid stellt derzeit Runde, Rundenzeit, Tank sowie simulierte Sektor-/Zwischenzeiten dar; andere Spalten zeigen „—“. Schriftmetriken, Grafikdetails und Ebenendarstellung können von Cockpit abweichen. Es gibt daher weiterhin keine Zusage vollständiger oder pixelidentischer Cockpit-Kompatibilität. Unbekannte XML-Eigenschaften bleiben erhalten; nicht simulierte Variablen behalten ihren Original-Vorschautext oder einen manuell gesetzten Vorschauwert.
+Öffne links **Elemente** und klicke auf den gewünschten Typ, zum Beispiel **Text**, **Fahrername**, **Rundenzeit** oder **Tankbalken**. Verschiebe das neue Element an die gewünschte Stelle und passe seine Eigenschaften an.
 
-Die abschließende Rendering- und Laufzeitprüfung erfolgt in Cockpit-XP. Bis dahin ist diese Version als Preview zu verwenden. Das automatisch von Cockpit erzeugte `ConvertRBS`-Verzeichnis kann eine ältere konvertierte Kopie enthalten; die Cockpit-Dokumentation erklärt dieses Verhalten.
+Bei fahrerbezogenen Anzeigen stellst du rechts unter **Datenquelle** die **Spur** ein. **Feste Spur / Fahrzeug-ID** ordnet die Anzeige einem bestimmten Fahrer zu. Mit **Nach Rennposition** folgt die Anzeige der Platzierung, beispielsweise dem jeweils führenden Fahrer bei Position 1. Über **NKS** legst du bei unterstützten Zahlenanzeigen die Nachkommastellen fest.
 
-## Technik und Entwicklung
+### Texte und Farben
 
-**Vue 3 + TypeScript + Vite** für Oberfläche, XML-Modell, SVG-Arbeitsfläche und Simulation; **Tauri 2 + Rust** für Windows-Fenster, Dateidialoge, Lesen, Zeichensätze, Sicherungen und Speichern. SVG ermöglicht auswählbare Texte und Grafiken ohne ein zusätzliches Canvas-Framework. Die native Dateischicht ist getrennt vom Editorzustand und testbar.
+Wähle einen Text oder eine Textanzeige aus. Rechts kannst du Schriftart, Schriftgröße, Fett, Kursiv und Ausrichtung einstellen. Bei festen Beschriftungen änderst du den Inhalt im Feld **Text**. Bei Rennwerten dient **Vorschautext** zum Beurteilen der späteren Darstellung.
 
-```powershell
-npm ci
-npm run desktop          # Windows-App im Entwicklungsmodus
-npm run desktop:build    # EXE und NSIS-Installer
-npm run dev              # Browser-Vorschau mit eingeschränkter Dateifunktion
-npm run build            # TypeScript-Prüfung und Frontend-Build
-npm test                 # XML-, Vorlagen- und Simulatortests
-npm run test:ui          # Bedienungstests über Microsoft Edge
-powershell -File scripts/desktop.ps1 test  # Rust-Dateisicherheitstests
-```
+Über **Farbquelle** wählst du eine feste Textfarbe oder die **Slot-Schriftfarbe**. Diese ist getrennt von der **Slot-Hintergrundfarbe**. So kannst du beispielsweise dunkle Schrift auf einem hellen Spurhintergrund verwenden.
 
-Voraussetzungen zum Bauen: Node.js ab 22.12, Rust mit MSVC-Toolchain und Visual Studio C++ Build Tools. Die auf diesem Rechner projektlokal eingerichtete Rust-Toolchain unter `.tools` wird von `scripts/desktop.ps1` automatisch verwendet; ohne diese wird die systemweite Toolchain verwendet. `package-lock.json` und `src-tauri/Cargo.lock` halten die konkreten Abhängigkeiten fest.
+Wenn Fahrer- oder Fahrzeugnamen abgeschnitten werden, erhöhe die **Platzhalterlänge**, sofern dieses Feld angeboten wird. Damit reservierst du mehr Platz für die Anzeige. Der Wert **0** verwendet die feste Breite oder den Vorschautext. Bei Zahlen und Zeiten bestimmt der Vorschautext das Format und die automatische Feldbreite.
 
-Struktur:
+### Bilder und Hintergrund
 
-- `src/core/xml.ts`: validiertes XML-Modell und gezielte Änderungen von Quelltextbereichen.
-- `src/core/editor.ts`: Dokumentzustand, Auswahl, Historie, Wiederherstellung und Dateibefehle.
-- `src/core/templates.ts`: native Cockpit-XML-Vorlagen.
-- `src/core/simulator.ts`: von den Dokumentdaten getrennte Beispiel-Rennsimulation.
-- `src/components/RbsCanvas.vue`: SVG-Darstellung und Zeigerinteraktion.
-- `src/components/Inspector.vue`: Eigenschaften und Rohattribute.
-- `src-tauri/src/main.rs`: native Datei- und Dialogschicht.
+Speichere einen neuen Rennbildschirm zuerst. Wähle anschließend ein Bildelement aus und importiere das gewünschte Bild über den Eigenschaftenbereich. Für den Hintergrund klicke auf eine freie Stelle und verwende **Hintergrund hinzufügen…**.
 
-## Geprüft
+Für die Verwendung in Cockpit-XP eignen sich insbesondere **PNG**, **JPG** und **BMP**. Bewahre die Bilder zusammen mit dem Rennbildschirm auf.
 
-- 152 Frontend-Tests, darunter 106 lokale Cockpit-RBS: Import, unveränderte Quelltexte, gezielte Attributänderung und exakte Rückänderung. Zusätzlich Pascal-Ausführung, Zeitplanung, Fehler-/Schleifenschutz, virtuelle Dateien der lokale Pace-Car-Zyklus, 28 installierte AddOn-Pakete, Array-/Referenzsemantik, Dialog-Callbacks, parallele Pakete, Strafabläufe und originale Regen-/Schadenslogik. Die Originaldateien werden nur gelesen.
-- 10 Rust-Tests: Byteidentität einschließlich der lokalen RBS-Sammlung, Backup-Inhalt, Konfliktschutz, Bildkopien/Bildkonflikte, Unicode/Zeichensatzwechsel und Zurückweisung fehlerhaften XMLs; zusätzlich lesender Datenbankzugriff und API-Abrufe gegen einen lokalen Testserver sowie AddOn-/Overlay-Import.
-- 9 Edge-Bedienungstests: Bearbeiten/Rückgängig/Wiederholen/Duplizieren/Export, Legacy-Import ohne Änderung durch Simulation, Neuanlage/Ziehen/Größenänderung/Fahrerzeilenkopie, eingepasste Simulatorvorschau sowie Tabellenkopie, CSV-Export und erweiterte Simulationsregler, Slotfarbpaare und AddOn-Overlay/Ausgaben ohne XML-Änderung. Neu: bedienbare Dialoge, parallel laufende Pakete, virtuelle Excel-Auswertung mit CSV sowie der originale Joker-Dialog.
-- Erfolgreicher TypeScript- und Windows-Release-Build.
-- Früherer nativer Basistest (0.3): Windows-Anwendung gestartet, Oberfläche über Windows Accessibility gelesen und nativen Öffnen-Dialog über `Strg+O` aufgerufen. Windows-Screenshot-Erfassung war in der Prüfumgebung nicht verfügbar; die visuelle Prüfung erfolgte am produktiv gebauten Frontend in Edge.
+## Mehrere Elemente ausrichten
 
-Die lokalen Sammlungstests verwenden standardmäßig das oben genannte Cockpit-Verzeichnis. `RBS_TEST_ROOT` kann ein anderes RBS-Testverzeichnis setzen; `COCKPIT_ADDON_ROOT` legt das Verzeichnis für den AddOn-Sammlungstest fest. Ist kein Verzeichnis vorhanden, wird nur dieser lokale Sammlungsteil übersprungen.
+![Drei ausgewählte Fahreranzeigen mit orange markiertem Bezugselement und gemeinsamen Bearbeitungsfunktionen](docs/images/ausrichten.png)
 
-## Referenzen
+1. Wähle zuerst das Element aus, an dem sich die anderen orientieren sollen.
+2. Halte **Umschalt** oder **Strg** gedrückt und klicke weitere Elemente an.
+3. Das erste Element erhält einen orangefarbenen Rahmen und die Kennzeichnung **1 · Bezug**.
+4. Wähle die gewünschte Funktion in der Werkzeugleiste.
 
-- [Cockpit-XP: AddOn-Befehle](https://wiki.cockpit-xp.de/dokuwiki/doku.php?id=cockpit-xp:addon:befehlsreferenz:befehlsreferenz)
-- [Cockpit-XP: API](https://wiki.cockpit-xp.de/xpdashboard/doku/05_Datenschnittstellen/Cockpit-API/)
+| Funktion | Ergebnis |
+| --- | --- |
+| Horizontal ausrichten | Alle ausgewählten Elemente erhalten die Y-Position des Bezugselements und liegen auf gleicher Höhe. |
+| Vertikal ausrichten | Alle ausgewählten Elemente erhalten die X-Position des Bezugselements und liegen links auf gleicher Position. |
+| Vertikal gleichmäßig verteilen | Mindestens drei ausgewählte Elemente werden mit gleichmäßigen vertikalen Abständen verteilt. |
 
-- [Cockpit-XP: RBS-Variablen](https://wiki.cockpit-xp.de/dokuwiki/doku.php?id=cockpit-xp:rennbildschirm:rbs-variablen)
-- [Cockpit-XP: RBS-XML-Datei](https://wiki.cockpit-xp.de/dokuwiki/doku.php?id=cockpit-xp:faq:workshop:rbs-xml-datei)
-- [Cockpit-XP: Änderungen am RBS werden nicht übernommen](https://wiki.cockpit-xp.de/dokuwiki/doku.php?id=cockpit-xp:faq:aenderungen_am_rbs_inkl._startampel_werden_nicht_uebernommen)
-- [Tauri: Windows-Voraussetzungen](https://v2.tauri.app/start/prerequisites/)
-- [Tauri: Windows-Installer](https://v2.tauri.app/distribute/windows-installer/)
+Eine Mehrfachauswahl lässt sich gemeinsam verschieben, duplizieren oder löschen. Beim Bearbeiten mehrerer Elemente gelten die Eigenschaften für die gesamte Auswahl. Positions- und Größenfelder beziehen sich auf das erste ausgewählte Element.
 
-RBS Studio ist ein eigenständiges Projekt und kein offizielles Cockpit-XP-Produkt.
+### Einrasten und Hilfslinien
+
+Aktiviere **Intelligente Hilfslinien** über das Fadenkreuz-Symbol. Beim Ziehen erscheinen lila Linien, sobald Kanten oder Mittelpunkte zu anderen Elementen oder zur Arbeitsfläche passen. Das Element rastet dort ein.
+
+Mit demselben Schalter kannst du die Hilfslinien ausschalten. Deine Wahl wird für den nächsten Start gespeichert. Halte beim Ziehen **Alt** gedrückt, um frei zu verschieben. **Esc** bricht den aktuellen Ziehvorgang ab.
+
+Das sichtbare **Raster** und das Einrasten am **8-Pixel-Raster** schaltest du getrennt über das Raster- und das Magnet-Symbol ein oder aus.
+
+## Vorschau und Rennsimulation
+
+### Darstellung prüfen
+
+Über **Vorschau** beurteilst du deinen Rennbildschirm ohne die Bearbeitung auf der Fläche. Über **Originaltexte anzeigen** beziehungsweise **Beispieldaten anzeigen** wechselst du zwischen den gespeicherten Vorschautexten und den Beispieldaten.
+
+Prüfe insbesondere lange Fahrernamen, große Rundenzahlen, Textfarben und Tankanzeigen. Kontrolliere den gespeicherten Bildschirm vor dem Renneinsatz auch in Cockpit-XP. Einzelne Darstellungen können abweichen.
+
+### Rennsimulation
+
+![Rennsimulation mit eingestelltem Rundenzeitbereich, Fahrerwerten, Boxenstrafen und Tankwartezeit](docs/images/simulator.png)
+
+1. Öffne **Simulator** in der Werkzeugleiste.
+2. Gib bei **Rundenzeit von (s)** und **bis (s)** den gewünschten Bereich ein, zum Beispiel **8,0 bis 9,5 Sekunden**.
+3. Klicke auf **Zeitbereich übernehmen**.
+4. Starte das Rennen mit **Starten**.
+
+Die Fahrer erhalten unterschiedliche zufällige Rundenzeiten. Ein neuer Zeitbereich gilt ab der nächsten neu begonnenen Runde. Boxenaufenthalte verlängern die tatsächlich gemessene Runde.
+
+Mit **Pause** hältst du die Simulation an. Über die Tempoauswahl kannst du sie mit **1×, 2×, 5× oder 10×** laufen lassen. Die Rennphasen **Rennen**, **Chaos**, **Safety Car** und **Zieleinlauf** helfen dir, verschiedene Anzeigen auszuprobieren. Das Symbol zum Zurücksetzen beginnt einen neuen Simulationslauf.
+
+#### Tanken und Boxenstrafen
+
+- **Boxeneinfahrt** bringt den jeweiligen Fahrer in die Box. **Box verlassen** setzt seine Fahrt fort.
+- Auf der Strecke wird der Tankstand beim Rundenwechsel aktualisiert. In der Box steigt er während des Tankens laufend.
+- Stelle unter **Boxenstrafe (s)** die gewünschte Dauer ein und klicke beim Fahrer auf **Strafe vergeben**. Mehrere Klicks vergeben mehrere Strafen, die nacheinander abgesessen werden.
+- Verlässt der Fahrer die Box vorzeitig, beginnt die unterbrochene Strafe beim nächsten Stopp wieder mit ihrer vollen Dauer. Bereits abgesessene Strafen sind erledigt.
+- Nach der letzten Strafe folgt die **Tankverzögerung nach Strafe (s)**, voreingestellt auf **3 Sekunden**. Der Tankbalken wird schwarz und läuft rückwärts ab. Danach zeigt er wieder den Tankstand und das Tanken beginnt.
+- Bei einem gewöhnlichen Tankstopp ohne Strafe beginnt das Tanken sofort.
+
+### Echte Cockpit-Daten anzeigen
+
+Wenn die Cockpit-API in deinem Cockpit-XP aktiviert ist, öffne im Simulator **Erweiterte Simulation · Ereignisse · Cockpit-Daten**. Trage unter **Cockpit-API** die Adresse ein, zum Beispiel **http://localhost:8080**, und wähle **Live-Daten verbinden**. Einen abweichenden Port kannst du direkt in der Adresse ändern.
+
+Über **Live-Daten trennen** beendest du die Verbindung. Für die lokale Rennsimulation wähle danach die Rennphase **Rennen** und **Starten**.
+
+## Speichern und in Cockpit-XP verwenden
+
+**Speichern** übernimmt die Änderungen in die geöffnete Datei. **Speichern unter** über den Pfeil neben **Speichern** legt eine Kopie an. Für eine eigene RBS-Variante wähle einen neuen Ordner und verwende dort beispielsweise den Dateinamen **Rennen.xml**.
+
+Beim Speichern einer Kopie übernimmt RBS Studio die zugehörigen, in der Datei verwendeten Bilder. Weitere Bildschirmdateien, etwa eine separate Startampel, übernimmst du bei Bedarf zusätzlich.
+
+1. Speichere den fertigen Rennbildschirm in deinem Cockpit-RBS-Verzeichnis.
+2. Wähle ihn in Cockpit-XP als Rennbildschirm aus.
+3. Prüfe dort Auflösung, Fahrerzuordnung, Bilder und Textdarstellung.
+
+### Sicherungen und Wiederherstellung
+
+Beim Überschreiben einer geänderten Datei legt RBS Studio eine Sicherung des vorherigen Stands im selben Ordner an. Du erkennst sie an **rbs-studio**, einem Zeitstempel und der Endung **.bak**. Zum Wiederverwenden kopierst du die gewünschte Sicherung unter einem neuen Namen mit der Endung **.xml**.
+
+Falls eine Datei seit dem Öffnen von einem anderen Programm geändert wurde, meldet RBS Studio den Konflikt. Speichere deine Bearbeitung dann unter einem anderen Namen und vergleiche die beiden Stände.
+
+Nach einer unterbrochenen Arbeit kann beim nächsten Start **Ein ungespeicherter Arbeitsstand ist vorhanden** erscheinen. Wähle **Wiederherstellen**, um daran weiterzuarbeiten, und speichere anschließend die Datei.
+
+## Tastenkürzel
+
+Die Bearbeitungskürzel gelten auf der Arbeitsfläche, wenn du gerade keinen Text in einem Eingabefeld bearbeitest.
+
+| Taste | Aktion |
+| --- | --- |
+| Strg + O | Rennbildschirm öffnen |
+| Strg + S | Speichern |
+| Strg + Umschalt + S | Speichern unter |
+| Strg + Z | Rückgängig |
+| Strg + Y oder Strg + Umschalt + Z | Wiederholen |
+| Strg + D | Auswahl duplizieren |
+| Strg + A | Alle Elemente auswählen |
+| Entf | Auswahl löschen |
+| Pfeiltasten | Auswahl um 1 Pixel verschieben |
+| Umschalt + Pfeiltasten | Auswahl um 10 Pixel verschieben |
+| Umschalt oder Strg + Klick | Elemente zur Auswahl hinzufügen oder daraus entfernen |
+| Alt beim Ziehen | Einrasten vorübergehend übergehen |
+| Esc beim Ziehen | Verschieben abbrechen |
+| Mausrad über der Arbeitsfläche | Hinein- oder herauszoomen |
+
+## Hilfe bei Problemen
+
+| Problem | Was du tun kannst |
+| --- | --- |
+| Ein Text wird abgeschnitten. | Wähle die Anzeige aus und prüfe Platzhalterlänge, Feldbreite, Vorschautext und Schriftgröße. |
+| Schrift ist auf einer Spurfarbe schlecht lesbar. | Prüfe die Farbquelle. Verwende eine passende feste Farbe oder die separate Slot-Schriftfarbe. |
+| Bilder fehlen. | Öffne den RBS aus seinem vollständigen Ordner. Prüfe, ob die Bilddateien vorhanden sind, oder importiere das Bild erneut. |
+| Ein Eintrag unter „Zuletzt geöffnet“ lässt sich nicht öffnen. | Die Datei wurde möglicherweise verschoben oder umbenannt. Öffne sie über „RBS öffnen“ am aktuellen Speicherort. |
+| Die Simulation läuft nicht weiter. | Prüfe „Starten“, die Rennphase und den Boxenstatus. „Chaos“ hält das Rennen an. Nach „Zieleinlauf“ setze die Simulation zurück. |
+| Eine Änderung lässt sich nicht speichern. | Lies die angezeigte Meldung und versuche bei einem Dateikonflikt „Speichern unter“ in einem eigenen Ordner. |
+| Cockpit-XP zeigt einen anderen Stand. | Prüfe, ob du die richtige Datei gespeichert und den passenden Bildschirm in Cockpit-XP ausgewählt hast. Lade ihn dort erneut. |
+
+Für Fehlerberichte nutze die [GitHub-Issues](https://github.com/Peschi90/CockpitXP-RBS-Studio/issues). Beschreibe die betroffene Programmversion, deine Arbeitsschritte, das erwartete Ergebnis und das tatsächliche Verhalten. Ein Screenshot der Stelle hilft bei der Einordnung.
+
+RBS Studio ist ein eigenständiges Projekt für Cockpit-XP.

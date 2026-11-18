@@ -955,6 +955,8 @@ small {
   color: #cfe8fb;
 }
 .simulator-panel {
+  max-height: 55vh;
+  overflow-y: auto;
   flex-shrink: 0;
   border-top: 1px solid var(--accent-border);
   background: #131d2b;
@@ -1005,6 +1007,33 @@ small {
   color: #cfe8fb;
   margin: 0 13px;
   min-width: 50px;
+}
+.race-settings,
+.race-settings form,
+.race-settings label {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.race-settings {
+  padding: 8px 18px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  column-gap: 20px;
+}
+.race-settings input {
+  width: 76px;
+  padding: 4px;
+}
+.race-settings button {
+  padding: 5px 8px;
+}
+.pit-status {
+  display: block;
+  color: #ffd28d;
+  margin-top: 5px;
+  font-size: 10px;
 }
 .sim-content {
   display: flex;
@@ -1111,6 +1140,9 @@ small {
   background: #39424c;
   border-radius: 2px;
   overflow: hidden;
+}
+.fuel-meter.waiting {
+  background: #c5cbd0;
 }
 .fuel-meter i {
   display: block;

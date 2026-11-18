@@ -50,6 +50,8 @@ import {
   Gauge,
   ArrowUpRight,
 } from "@lucide/vue";
+import UpdateDialog from "./components/UpdateDialog.vue";
+import { version } from "../package.json";
 import StartDashboard from "./components/StartDashboard.vue";
 import TemplatePicker from "./components/TemplatePicker.vue";
 import { type TemplateKind } from "./core/templates";
@@ -68,6 +70,10 @@ import {
 } from "./core/xml";
 import {
   tick,
+  configureLapTimes,
+  issuePitPenalty,
+  refuelCountdownPercent,
+  togglePit,
   resetSimulation,
   timeText,
   simulatedTags,
@@ -75,6 +81,29 @@ import {
 const e = reactive(useEditor()),
   canvas = ref<InstanceType<typeof RbsCanvas>>();
 const dashboard = ref(true);
+const updateOpen = ref(false);
+const updateBusy = ref(false);
+const lapMin = ref(e.sim.lapMinMs / 1000);
+const lapMax = ref(e.sim.lapMaxMs / 1000);
+const penaltySeconds = ref(5);
+const rangeMessage = ref("");
+function setRefuelDelay(event: Event) {
+  const input = event.target as HTMLInputElement;
+  if (input.validity.valid) e.sim.refuelDelay = input.valueAsNumber;
+  input.value = String(e.sim.refuelDelay);
+}
+function applyLapRange() {
+  rangeMessage.value = configureLapTimes(e.sim, lapMin.value, lapMax.value)
+    ? "Zeitbereich übernommen. Er gilt ab der nächsten neuen Runde."
+    : "1 bis 3600 Sekunden eingeben, mit mindestens 0,015 s Abstand.";
+}
+watch(
+  () => e.doc.slots,
+  (slots) => {
+    e.sim.activeSlots = slots;
+  },
+  { immediate: true },
+);
 function savedSmartGuides() {
   try {
     return localStorage.getItem("rbs-studio-smart-guides") !== "off";
@@ -229,6 +258,7 @@ function setResolution(event: Event) {
   newHeight.value = h!;
 }
 function keydown(event: KeyboardEvent) {
+  if (updateOpen.value) return;
   const editing = (event.target as HTMLElement)?.closest(
     'input,textarea,select,[contenteditable="true"]',
   );
@@ -302,7 +332,7 @@ onMounted(async () => {
   window.addEventListener("keydown", keydown);
   window.addEventListener("beforeunload", beforeUnload);
   timer = setInterval(() => tick(e.sim, 0.1), 100);
-  unlisten = await e.installCloseGuard();
+  unlisten = await e.installCloseGuard(() => updateBusy.value);
 });
 onUnmounted(() => {
   window.removeEventListener("keydown", keydown);
@@ -376,6 +406,7 @@ onUnmounted(() => {
 });
 </script>
 <template>
+  <UpdateDialog :dirty="e.dirty" :editor-busy="e.busy" :save="e.save" @open="updateOpen = $event" @busy="updateBusy = $event" />
   <div
     class="app-shell"
     :class="{ 'simulation-expanded': simPanel && !dashboard }"
@@ -394,7 +425,7 @@ onUnmounted(() => {
           <strong>RBS <span>STUDIO</span></strong
           ><small>COCKPIT-XP EDITOR</small>
         </div>
-        <span class="version-tag">PREVIEW 0.6.0</span>
+        <span class="version-tag">{{ version }}</span>
       </div>
       <div v-if="e.hasDocument" class="document-title">
         <span class="document-dot" :class="{ dirty: e.dirty }"></span
@@ -819,6 +850,53 @@ onUnmounted(() => {
           </button>
         </div>
       </div>
+      <div class="race-settings">
+        <form @submit.prevent="applyLapRange">
+          <label
+            >Rundenzeit von (s)<input
+              type="number"
+              v-model.number="lapMin"
+              required
+              min="1"
+              max="3600"
+              step="0.001"
+              :disabled="e.sim.live"
+          /></label>
+          <label
+            >bis (s)<input
+              aria-label="Rundenzeit bis (s)"
+              type="number"
+              v-model.number="lapMax"
+              required
+              min="1"
+              max="3600"
+              step="0.001"
+              :disabled="e.sim.live"
+          /></label>
+          <button :disabled="e.sim.live">Zeitbereich übernehmen</button>
+        </form>
+        <label
+          >Boxenstrafe (s)<input
+            v-model.number="penaltySeconds"
+            type="number"
+            min="0.1"
+            step="0.1"
+            max="3600"
+            :disabled="e.sim.live"
+        /></label>
+        <label
+          >Tankverzögerung nach Strafe (s)<input
+            type="number"
+            required
+            min="0"
+            max="3600"
+            step="0.1"
+            :value="e.sim.refuelDelay"
+            :disabled="e.sim.live"
+            @change="setRefuelDelay"
+        /></label>
+        <span role="status">{{ rangeMessage }}</span>
+      </div>
       <div class="sim-content">
         <div class="scenario-picker">
           <span class="eyebrow">RENNPHASE</span
@@ -858,27 +936,72 @@ onUnmounted(() => {
             </div>
             <p>
               <strong>{{ driver.laps }}</strong> Runden
-              <span>{{ driver.last.toFixed(3) }} s</span>
+              <span>{{
+                driver.laps || e.sim.live ? driver.last.toFixed(3) + " s" : "–"
+              }}</span>
             </p>
-            <div class="fuel-meter">
+            <div
+              class="fuel-meter"
+              :class="{ waiting: refuelCountdownPercent(driver) !== null }"
+            >
               <i
                 :style="{
-                  width: driver.fuel + '%',
-                  background: slotColors[driver.id - 1],
+                  width: (refuelCountdownPercent(driver) ?? driver.fuel) + '%',
+                  background:
+                    refuelCountdownPercent(driver) !== null
+                      ? '#000000'
+                      : slotColors[driver.id - 1],
                 }"
               />
             </div>
             <button
               :class="{ active: driver.pit }"
-              @click="
-                driver.pit = !driver.pit;
-                if (driver.pit) driver.stops++;
+              :disabled="
+                e.sim.live || driver.disqualified || e.sim.phase === 'finish'
               "
+              @click="togglePit(e.sim, driver)"
             >
               <Fuel :size="12" />
-              {{ driver.pit ? "Box verlassen" : "Boxenstopp" }}
-              <span>{{ Math.round(driver.fuel) }} %</span>
+              {{ driver.pit ? "Box verlassen" : "Boxeneinfahrt" }}
+              <span>{{ driver.fuel.toFixed(1) }} %</span>
             </button>
+            <button
+              :disabled="
+                e.sim.live ||
+                driver.disqualified ||
+                e.sim.phase === 'finish' ||
+                !(penaltySeconds > 0 && penaltySeconds <= 3600)
+              "
+              @click="issuePitPenalty(e.sim, driver, penaltySeconds)"
+            >
+              Strafe vergeben
+            </button>
+            <small v-if="driver.boxPenalty" class="pit-status"
+              >{{ driver.pit ? "Absitzen" : "Boxenstrafe offen" }} ·
+              {{ driver.boxPenalty.remaining.toFixed(1) }} s<span
+                v-if="driver.boxPenalties.length > 1"
+              >
+                · danach
+                {{
+                  driver.boxPenalties
+                    .slice(1)
+                    .map((p) => p.duration + " s")
+                    .join(", ")
+                }}</span
+              ></small
+            >
+            <small
+              v-else-if="refuelCountdownPercent(driver) !== null"
+              class="pit-status"
+              >Tanken in {{ driver.refuelWait.toFixed(1) }} s</small
+            >
+            <small v-else-if="driver.pit" class="pit-status">{{
+              driver.tankLocked || driver.pitFuelBlocked
+                ? "Tanken gesperrt"
+                : driver.fuel >= 100
+                  ? "Tank voll"
+                  : "Tanken"
+            }}</small>
           </div>
         </div>
       </div>

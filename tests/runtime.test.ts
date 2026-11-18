@@ -42,7 +42,7 @@ it("keeps independent progress, countdown, penalty and tank values", () => {
   );
   const s = createSimulation();
   s.elapsed = 300;
-  s.drivers[0]!.penalty = 15;
+  s.drivers[0]!.keyPenaltyRemaining = 15;
   s.barValues["Test:1"] = 125;
   expect(ns.map((n) => barPercent(n, s))).toEqual([100, 50, 50, 100]);
 });

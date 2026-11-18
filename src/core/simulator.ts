@@ -1,5 +1,14 @@
 import { reactive } from "vue";
 import { slotColors, slotTextColors, type XmlNode } from "./xml";
+export interface PitPenalty {
+  duration: number;
+  remaining: number;
+  deadline: number;
+  deduction: number;
+  disqualify: boolean;
+  endLaps: number;
+  fuelAfter: boolean;
+}
 export interface Driver {
   id: number;
   name: string;
@@ -9,19 +18,23 @@ export interface Driver {
   best: number;
   fuel: number;
   progress: number;
+  bestLap: number;
+  lapElapsed: number;
+  lapTargetMs: number;
+  drawRemaining: number;
+  drawSwaps: Map<number, number>;
+  fueledThisVisit: boolean;
+  penaltiesIssued: number;
   stops: number;
   pit: boolean;
   position?: number;
   history: { lap: number; time: number; fuel: number }[];
-  penalty: number;
-  boxPenalty: null | {
-    remaining: number;
-    deadline: number;
-    deduction: number;
-    disqualify: boolean;
-    endLaps: number;
-    fuelAfter: boolean;
-  };
+  readonly penalty: number;
+  readonly boxPenalty: PitPenalty | null;
+  boxPenalties: PitPenalty[];
+  keyPenaltyRemaining: number;
+  refuelWait: number;
+  refuelWaitDuration: number;
   tankLocked: boolean;
   pitFuelBlocked: boolean;
   disqualified: boolean;
@@ -58,6 +71,11 @@ export function createSimulation() {
     live: false,
     liveStatus: "",
     targetLaps: 100,
+    activeSlots: 8,
+    lapMinMs: 8000,
+    lapMaxMs: 9500,
+    fuelPerLap: 2,
+    refuelDelay: 3,
     running: false,
     enabled: true,
     elapsed: 0,
@@ -95,17 +113,35 @@ export function createSimulation() {
     drivers: names.map((name, i): Driver => ({
       id: i + 1,
       name,
+      get boxPenalty() {
+        return this.boxPenalties[0] ?? null;
+      },
+      get penalty() {
+        return this.boxPenalties.reduce(
+          (sum, p) => sum + p.remaining,
+          this.keyPenaltyRemaining,
+        );
+      },
       car: cars[i]!,
       laps: 0,
       last: 8.3 + i * 0.21,
       best: 8.1 + i * 0.2,
       fuel: 100,
       progress: 0,
+      bestLap: 0,
+      lapElapsed: 0,
+      lapTargetMs: 0,
+      drawRemaining: 0,
+      drawSwaps: new Map<number, number>(),
+      fueledThisVisit: false,
+      penaltiesIssued: 0,
       stops: 0,
       pit: false,
       history: [],
-      penalty: 0,
-      boxPenalty: null,
+      boxPenalties: [],
+      keyPenaltyRemaining: 0,
+      refuelWait: 0,
+      refuelWaitDuration: 0,
       pitFuelBlocked: false,
       tankLocked: false,
       disqualified: false,
@@ -121,13 +157,166 @@ export function createSimulation() {
   });
 }
 export type Simulation = ReturnType<typeof createSimulation>;
+// Each slot draws from its own millisecond values, shuffled without replacement.
+function nextLapTarget(sim: Simulation, driver: Driver) {
+  const first = sim.lapMinMs + driver.id - 1;
+  const count = Math.floor((sim.lapMaxMs - first) / 8) + 1;
+  if (!driver.drawRemaining) {
+    driver.drawRemaining = count;
+    driver.drawSwaps.clear();
+  }
+  const remaining = driver.drawRemaining;
+  let index = Math.floor(Math.random() * remaining);
+  const valueAt = (i: number) => first + 8 * (driver.drawSwaps.get(i) ?? i);
+  if (remaining === count && valueAt(index) === driver.lapTargetMs)
+    index = (index + 1) % remaining;
+  const target = valueAt(index);
+  driver.drawSwaps.set(
+    index,
+    driver.drawSwaps.get(remaining - 1) ?? remaining - 1,
+  );
+  driver.drawSwaps.delete(remaining - 1);
+  driver.drawRemaining--;
+  return target;
+}
+export function configureLapTimes(sim: Simulation, min: number, max: number) {
+  if (sim.live) return false;
+  const lo = Math.round(min * 1000),
+    hi = Math.round(max * 1000);
+  if (
+    !Number.isSafeInteger(lo) ||
+    !Number.isSafeInteger(hi) ||
+    lo < 1000 ||
+    hi > 3600000 ||
+    hi - lo < 15
+  )
+    return false;
+  if (lo === sim.lapMinMs && hi === sim.lapMaxMs) return true;
+  sim.lapMinMs = lo;
+  sim.lapMaxMs = hi;
+  for (const d of sim.drivers) {
+    d.drawRemaining = 0;
+    d.drawSwaps.clear();
+    if (d.progress === 0) d.lapTargetMs = 0;
+  }
+  return true;
+}
+export function issuePitPenalty(sim: Simulation, d: Driver, seconds: number) {
+  if (
+    sim.live ||
+    sim.phase === "finish" ||
+    d.disqualified ||
+    !Number.isFinite(seconds) ||
+    seconds <= 0 ||
+    seconds > 3600
+  )
+    return;
+  d.boxPenalties.push({
+    duration: seconds,
+    remaining: seconds,
+    deadline: Infinity,
+    deduction: 0,
+    disqualify: false,
+    endLaps: 0,
+    fuelAfter: true,
+  });
+  d.penaltiesIssued++;
+}
+export function togglePit(sim: Simulation, d: Driver) {
+  if (sim.live || sim.phase === "finish" || d.disqualified) return;
+  if (d.pit) {
+    if (d.boxPenalty) d.boxPenalty.remaining = d.boxPenalty.duration;
+    if (d.refuelWait > 0) d.refuelWait = d.refuelWaitDuration;
+  }
+  d.pit = !d.pit;
+  d.pitFuelBlocked = false;
+  d.fueledThisVisit = false;
+}
+function enforceDeadline(d: Driver) {
+  const laps = d.laps;
+  for (let i = d.boxPenalties.length - 1; i >= 0; i--) {
+    const p = d.boxPenalties[i]!;
+    if (laps <= p.deadline) continue;
+    d.laps = Math.max(0, d.laps - p.deduction);
+    d.disqualified ||= p.disqualify;
+    d.boxPenalties.splice(i, 1);
+  }
+}
+function drive(sim: Simulation, d: Driver, seconds: number) {
+  if (!d.lapTargetMs) d.lapTargetMs = nextLapTarget(sim, d);
+  while (seconds > 0 && !d.disqualified) {
+    const pace = d.cuSpeed / 15 / (sim.phase === "safety" ? 1.7 : 1);
+    if (pace <= 0) {
+      d.lapElapsed += seconds;
+      return;
+    }
+    const lapTime = d.lapTargetMs / (1000 * pace);
+    const toLine = (1 - d.progress) * lapTime;
+    if (seconds + 1e-9 < toLine) {
+      d.progress += seconds / lapTime;
+      d.lapElapsed += seconds;
+      return;
+    }
+    seconds -= toLine;
+    d.laps++;
+    d.last = Math.round((d.lapElapsed + toLine) * 1000) / 1000;
+    if (!d.bestLap || d.last < d.best) {
+      d.best = d.last;
+      d.bestLap = d.laps;
+    }
+    d.fuel = Math.max(0, d.fuel - sim.fuelPerLap);
+    d.history.push({ lap: d.laps, time: d.last, fuel: d.fuel });
+    if (d.history.length > 1000) d.history.shift();
+    d.progress = 0;
+    d.lapElapsed = 0;
+    d.lapTargetMs = nextLapTarget(sim, d);
+    if (d.pendingCuBrake !== null) {
+      d.cuBrake = d.pendingCuBrake;
+      d.pendingCuBrake = null;
+    }
+    enforceDeadline(d);
+    if (d.pendingCuSpeed !== null) {
+      d.cuSpeed = d.pendingCuSpeed;
+      d.pendingCuSpeed = null;
+    }
+  }
+}
+export function refuelCountdownPercent(d: Driver): number | null {
+  if (!d.pit || d.boxPenalty || d.refuelWait <= 0) return null;
+  return (100 * d.refuelWait) / d.refuelWaitDuration;
+}
+
+function servicePit(sim: Simulation, d: Driver, seconds: number) {
+  d.lapElapsed += seconds;
+  while (d.boxPenalty) {
+    const p = d.boxPenalty;
+    const served = Math.min(seconds, p.remaining);
+    seconds -= served;
+    p.remaining = Math.round((p.remaining - served) * 1e9) / 1e9;
+    if (p.remaining > 0) return;
+    d.boxPenalties.shift();
+    d.pitFuelBlocked ||= !p.fuelAfter;
+    if (!d.boxPenalty) {
+      d.refuelWaitDuration = d.pitFuelBlocked ? 0 : sim.refuelDelay;
+      d.refuelWait = d.refuelWaitDuration;
+    }
+  }
+  if (d.pitFuelBlocked) return;
+  const waited = Math.min(seconds, d.refuelWait);
+  d.refuelWait = Math.round((d.refuelWait - waited) * 1e9) / 1e9;
+  seconds -= waited;
+  if (seconds <= 0 || d.tankLocked || d.fuel >= 100) return;
+  if (!d.fueledThisVisit) d.stops++;
+  d.fueledThisVisit = true;
+  d.fuel = Math.min(100, d.fuel + seconds * 8);
+}
 export function tick(sim: Simulation, dt: number) {
   if (!sim.live && sim.phase === "finish")
     for (const d of sim.drivers)
       if (d.boxPenalty) {
-        d.laps = Math.max(0, d.laps - d.boxPenalty.endLaps);
-        d.boxPenalty = null;
-        d.penalty = 0;
+        const deduction = d.boxPenalties.reduce((sum, p) => sum + p.endLaps, 0);
+        d.laps = Math.max(0, d.laps - deduction);
+        d.boxPenalties.length = 0;
       }
   if (
     sim.live ||
@@ -137,53 +326,19 @@ export function tick(sim: Simulation, dt: number) {
   )
     return;
   const seconds = dt * sim.speed;
+  if (!Number.isFinite(seconds) || seconds <= 0) return;
   sim.elapsed += seconds;
-  for (const d of sim.drivers) {
+  for (const d of sim.drivers.slice(0, sim.activeSlots)) {
+    if (!d.pit) enforceDeadline(d);
     if (d.disqualified) continue;
-    if (d.boxPenalty && !d.pit && d.laps > d.boxPenalty.deadline) {
-      d.laps = Math.max(0, d.laps - d.boxPenalty.deduction);
-      d.disqualified = d.boxPenalty.disqualify;
-      d.boxPenalty = null;
-      d.penalty = 0;
-    }
     if (d.pit) {
-      let fuelSeconds = seconds;
-      if (d.boxPenalty) {
-        const served = Math.min(seconds, d.boxPenalty.remaining);
-        d.boxPenalty.remaining -= served;
-        fuelSeconds -= served;
-        d.penalty = d.boxPenalty.remaining;
-        if (d.penalty > 0) continue;
-        d.pitFuelBlocked = !d.boxPenalty.fuelAfter;
-        d.boxPenalty = null;
-      }
-      if (!d.tankLocked && !d.pitFuelBlocked)
-        d.fuel = Math.min(100, d.fuel + fuelSeconds * 8);
+      servicePit(sim, d, seconds);
       continue;
     }
+    d.fueledThisVisit = false;
     d.pitFuelBlocked = false;
-    const lapTime =
-      (8.3 + d.id * 0.19 + Math.sin(d.laps * 1.7 + d.id) * 0.35) *
-      (sim.phase === "safety" ? 1.7 : 1);
-    if (!d.boxPenalty) d.penalty = Math.max(0, d.penalty - seconds);
-    d.progress += ((seconds / lapTime) * d.cuSpeed) / 15;
-    d.fuel = Math.max(0, d.fuel - seconds * 0.18);
-    while (d.progress >= 1) {
-      d.progress -= 1;
-      d.laps++;
-      if (d.pendingCuSpeed !== null) {
-        d.cuSpeed = d.pendingCuSpeed;
-        d.pendingCuSpeed = null;
-      }
-      if (d.pendingCuBrake !== null) {
-        d.cuBrake = d.pendingCuBrake;
-        d.pendingCuBrake = null;
-      }
-      d.last = lapTime;
-      d.best = Math.min(d.best, lapTime);
-      d.history.push({ lap: d.laps, time: lapTime, fuel: d.fuel });
-      if (d.history.length > 1000) d.history.shift();
-    }
+    d.keyPenaltyRemaining = Math.max(0, d.keyPenaltyRemaining - seconds);
+    drive(sim, d, seconds);
   }
 }
 export function resetSimulation(sim: Simulation) {
@@ -198,11 +353,20 @@ export function resetSimulation(sim: Simulation) {
       best: 8.1 + d.id * 0.2,
       fuel: 100,
       progress: 0,
+      bestLap: 0,
+      lapElapsed: 0,
+      lapTargetMs: 0,
+      drawRemaining: 0,
+      drawSwaps: new Map<number, number>(),
+      fueledThisVisit: false,
+      penaltiesIssued: 0,
       stops: 0,
       pit: false,
       history: [],
-      penalty: 0,
-      boxPenalty: null,
+      boxPenalties: [],
+      keyPenaltyRemaining: 0,
+      refuelWait: 0,
+      refuelWaitDuration: 0,
       pitFuelBlocked: false,
       tankLocked: false,
       disqualified: false,
@@ -370,13 +534,13 @@ export function displayText(n: XmlNode, sim: Simulation) {
       value = decimal(d.last);
       break;
     case "rundenzeitlauf":
-      value = decimal(d.progress * d.last);
+      value = decimal(sim.live ? d.progress * d.last : d.lapElapsed);
       break;
     case "schnellsterunde":
       value = decimal(d.best);
       break;
     case "schnellsterunderd":
-      value = String(Math.max(1, d.laps - 2));
+      value = String(sim.live ? Math.max(1, d.laps - 2) : d.bestLap);
       break;
     case "position":
       value = String(ranked(sim).findIndex((x) => x.id === d.id) + 1);
@@ -468,7 +632,13 @@ export function displayText(n: XmlNode, sim: Simulation) {
       value = decimal(d.last / 3, 3);
       break;
     case "boxenstrafe":
-      value = d.pit ? "BOX" : "";
+      value = d.boxPenalty
+        ? (d.pit ? "Strafe " : "Boxenstrafe ") +
+          Math.ceil(d.boxPenalty.remaining) +
+          " s"
+        : d.pit
+          ? "BOX"
+          : "";
       break;
     case "addonVariable":
       value =
@@ -502,8 +672,8 @@ export function displayText(n: XmlNode, sim: Simulation) {
         ),
       ),
       zeitstrafe: decimal(d.penalty),
-      tankVerbrauchProRunde: decimal(d.last * 0.18),
-      tankverbrauchprorunde: decimal(d.last * 0.18),
+      tankVerbrauchProRunde: decimal(sim.live ? d.last * 0.18 : sim.fuelPerLap),
+      tankverbrauchprorunde: decimal(sim.live ? d.last * 0.18 : sim.fuelPerLap),
       diffschnellsterunde2: decimal(
         d.best - Math.min(...sim.drivers.map((d) => d.best)),
       ),

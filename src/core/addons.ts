@@ -186,6 +186,7 @@ export class AddonEngine {
   private lastReset = 0;
   private laps: number[] = [];
   private pits: boolean[] = [];
+  private penaltiesIssued: number[] = [];
   private bests: number[] = [];
   private disqualified: boolean[] = [];
   private pkg?: AddonPackage;
@@ -294,6 +295,7 @@ export class AddonEngine {
     this.lastReset = this.sim.resetId;
     this.laps = this.sim.drivers.map((d) => d.laps);
     this.pits = this.sim.drivers.map((d) => d.pit);
+    this.penaltiesIssued = this.sim.drivers.map((d) => d.penaltiesIssued);
     this.bests = this.sim.drivers.map((d) => d.best);
     this.disqualified = this.sim.drivers.map((d) => d.disqualified);
     this.lastPhase = "";
@@ -395,6 +397,13 @@ export class AddonEngine {
         lap++
       )
         this.emit("StartZiel", d.id);
+      for (
+        let n = this.penaltiesIssued[d.id - 1] ?? 0;
+        n < d.penaltiesIssued;
+        n++
+      )
+        this.emit("Bestrafung", d.id, 3, 1);
+      this.penaltiesIssued[d.id - 1] = d.penaltiesIssued;
       if (this.pits[d.id - 1] !== d.pit)
         this.emit(d.pit ? "TankenEinfahrt" : "TankenAusfahrt", d.id);
       if (d.best < (this.bests[d.id - 1] ?? d.best))
@@ -575,7 +584,13 @@ export class AddonEngine {
           ),
           "cockpit.rennteilnehmer": slot <= this.slots(),
           "cockpit.tankenaktiviert": true,
-          "cockpit.eswirdgetankt": d.pit,
+          "cockpit.eswirdgetankt":
+            d.pit &&
+            !d.boxPenalty &&
+            d.refuelWait === 0 &&
+            !d.tankLocked &&
+            !d.pitFuelBlocked &&
+            d.fuel < 100,
           "cockpit.wartezeitvortanken": 0,
           clblack: 0,
           clwhite: 0xffffff,
@@ -787,8 +802,8 @@ export class AddonEngine {
           case "cpcancelstrafe": {
             const d = sim.drivers[num() - 1];
             if (d) {
-              d.penalty = 0;
-              d.boxPenalty = null;
+              d.keyPenaltyRemaining = 0;
+              d.boxPenalties.length = 0;
             }
             return null;
           }
@@ -796,15 +811,15 @@ export class AddonEngine {
           case "cpaddonboxenstrafe2": {
             const d = sim.drivers.find((d) => d.name === text());
             if (!d) return false;
-            d.boxPenalty = {
+            d.boxPenalties.push({
               remaining: Math.max(0, num(2) / 10),
+              duration: Math.max(0, num(2) / 10),
               deadline: d.laps + Math.max(0, num(1)),
               deduction: Math.max(0, num(3)),
               disqualify: Boolean(args[4]),
               endLaps: Math.max(0, num(5)),
               fuelAfter: args[6] !== false,
-            };
-            d.penalty = d.boxPenalty.remaining;
+            });
             this.session.emit("Bestrafung", d.id, 3, 1);
             this.log(`Boxenstrafe: ${d.name}, ${d.penalty.toFixed(1)} s`);
             return true;
@@ -815,7 +830,7 @@ export class AddonEngine {
               0,
               Math.min(3600, Number(this.state.keyPenaltySeconds) || 0),
             );
-            d.penalty += seconds;
+            d.keyPenaltyRemaining += seconds;
             this.session.emit("Bestrafung", d.id, 2, 1);
             this.log("Simulierte Tastenstrafe: " + seconds + " s");
             return null;

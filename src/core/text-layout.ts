@@ -42,13 +42,74 @@ export function fontRequest(
     text,
   };
 }
-/** A saved placeholder defines the field. Live values must never move its anchor.
- * len is a reserve for string fields, not a replacement for numeric/time masks. */
+export function isTextField(n: XmlNode) {
+  return (
+    !shapeTags.has(n.tag) &&
+    !imageTags.has(n.tag) &&
+    !n.tag.startsWith("bild") &&
+    !barTags.has(n.tag) &&
+    n.tag !== "datagrid"
+  );
+}
+const stringFields = new Set([
+  "fahrer",
+  "fahrerln",
+  "fahrersn",
+  "fahrzeug",
+  "fahrzeugln",
+  "fahrzeugsn",
+  "status",
+  "rennmodus",
+  "rennmodusbase",
+  "rennbahn",
+  "rennbahnln",
+  "datum",
+  "addonvariable",
+  "scriptvariable",
+  "scriptvariablepackage",
+  "cp_stringvar",
+  "boxenstrafe",
+  "teamname",
+  "crname",
+  "crfahrer",
+  "crnextfahrer",
+]);
+export function supportsTextLength(n: XmlNode) {
+  if (!isTextField(n) || n.tag === "text") return false;
+  if (stringFields.has(n.tag.toLowerCase())) return true;
+  // A numeric/time placeholder carries format information. Imported len values
+  // must not replace these masks with a string reserve (e.g. 0:00:00,0).
+  return !/^[\s\d.,:+\-/%]+(?:\s*s)?$/i.test(n.text.trim());
+}
+export function textReserveLength(n: XmlNode, a: Record<string, string>) {
+  const value = Number(a.len);
+  return supportsTextLength(n) && Number.isFinite(value)
+    ? Math.max(0, Math.min(10000, Math.floor(value)))
+    : 0;
+}
+/** Reserve is independent of current live values and of the preview caption.
+ * len=0 restores the saved placeholder; numeric/time masks keep their format. */
 export function fieldSample(n: XmlNode, a: Record<string, string>): string {
   if (n.tag === "text") return a.text ?? n.text;
+  const length = textReserveLength(n, a);
+  if (length) return `${a.prefix ?? ""}${"W".repeat(length)}${a.post ?? ""}`;
   if (n.text.trim()) return n.text.trim();
-  const length = Math.max(0, Math.min(10000, Math.floor(Number(a.len) || 0)));
-  return length ? "W".repeat(length) : n.tag;
+  return n.tag;
+}
+
+export function textFieldSize(
+  n: XmlNode,
+  a: Record<string, string>,
+  field: RbsTextMetrics,
+) {
+  const g = geometry({ ...n, attrs: a });
+  return {
+    width:
+      textReserveLength(n, a) > 0 || !("breite" in a || "x2" in a)
+        ? Math.max(1, field.width)
+        : g.width,
+    height: "hoehe" in a || "y2" in a ? g.height : field.height,
+  };
 }
 
 const revision = ref(0);
@@ -139,20 +200,12 @@ export function measureRbsText(r: TextRequest): RbsTextMetrics {
 export function layoutGeometry(n: XmlNode, doc: RbsDocument) {
   const a = inheritedAttributes(n, doc),
     g = geometry({ ...n, attrs: a });
-  if (
-    shapeTags.has(n.tag) ||
-    imageTags.has(n.tag) ||
-    n.tag.startsWith("bild") ||
-    barTags.has(n.tag) ||
-    n.tag === "datagrid"
-  )
-    return g;
+  if (!isTextField(n)) return g;
   const field = measureRbsText(
     fontRequest(a, doc.base.attrs.fontsizefaktor, fieldSample(n, a)),
   );
   return {
     ...g,
-    width: "breite" in a || "x2" in a ? g.width : Math.max(1, field.width),
-    height: "hoehe" in a || "y2" in a ? g.height : field.height,
+    ...textFieldSize(n, a, field),
   };
 }
