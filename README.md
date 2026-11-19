@@ -1,6 +1,6 @@
 # RBS Studio
 
-**Version 1.0.1**
+**Version 1.0.2**
 
 Mit RBS Studio gestaltest du Rennbildschirme für Cockpit-XP. Du kannst vorhandene RBS öffnen, Texte und Anzeigen verschieben, eigene Layouts aus Vorlagen erstellen und sie mit einem simulierten Rennen ausprobieren.
 
@@ -9,6 +9,20 @@ Mit RBS Studio gestaltest du Rennbildschirme für Cockpit-XP. Du kannst vorhande
 ![Startseite von RBS Studio mit den Schaltflächen zum Erstellen und Öffnen eines Rennbildschirms](docs/images/startseite.png)
 
 ## Installation
+
+### Mindestanforderungen
+
+- **Windows 10 oder Windows 11 in 64 Bit** auf einem PC mit Intel- oder AMD-Prozessor (x64).
+- **Microsoft Edge WebView2 Runtime** für die Programmoberfläche. Falls sie fehlt, installiert der Setup-Assistent sie automatisch nach.
+- **Internetverbindung bei der Installation**, wenn WebView2 nachinstalliert werden muss. Zum anschließenden Bearbeiten lokaler Rennbildschirme ist keine Internetverbindung nötig.
+
+**Windows 7, Windows 8/8.1 und 32-Bit-Windows werden nicht unterstützt.** Für Windows auf ARM ist dieser Installer nicht vorgesehen. Die Windows-Anforderungen gelten auch für die einzeln herunterladbare EXE.
+
+Der Installer prüft die Windows-Version und die Prozessorarchitektur vor der Installation von WebView2 und RBS Studio. Auf einem ungeeigneten System erscheint ein Hinweis und die Installation wird beendet.
+
+Läuft dein Cockpit-XP-Rechner noch mit Windows 7, kannst du deine Rennbildschirme auf einem geeigneten anderen PC bearbeiten. Übertrage anschließend den vollständigen RBS-Ordner einschließlich der Bilder auf den Cockpit-Rechner und prüfe den Bildschirm dort in Cockpit-XP.
+
+### Installation durchführen
 
 1. Öffne die [Downloadseite](https://github.com/Peschi90/CockpitXP-RBS-Studio/releases/latest).
 2. Klappe bei Bedarf **Assets** auf und lade die Datei herunter, deren Name mit **x64-setup.exe** endet. Das ist der Installer für Windows-PCs mit 64-Bit-Intel- oder AMD-Prozessor.
@@ -54,12 +68,16 @@ Das Haus-Symbol oben links führt zurück zur Startseite. Über **Zurück zu …
 ![Vorlagenauswahl mit Layoutvorschauen sowie Einstellungen für Auflösung und Fahreranzahl](docs/images/vorlagen.png)
 
 1. Wähle **Neuen RBS anlegen** auf der Startseite oder **Neu** in der oberen Leiste.
-2. Wähle eine Vorlage oder **Leere Arbeitsfläche**.
-3. Stelle die gewünschte Auflösung und die Fahreranzahl von **1 bis 8** ein. Die Vorschauen passen sich daran an.
+2. Stelle oben die **Fahreranzahl** von **1 bis 8** ein. Du siehst die dafür geeigneten Vorlagen; die Vorschauen passen sich daran an.
+3. Filtere bei Bedarf nach **Fahrer-Anordnung** und **Farbwelt**, wähle eine Vorlage oder **Leere Arbeitsfläche** und stelle die gewünschte Auflösung ein.
 4. Klicke auf **Rennbildschirm erstellen**.
 5. Speichere deinen Bildschirm in einem eigenen Ordner, zum Beispiel als **Rennen.xml**.
 
-Diese zwölf gestalteten Vorlagen stehen zur Auswahl.
+**Vertikal · untereinander** zeigt Fahrerzeilen, **Horizontal · nebeneinander** Fahrerspalten. **Raster · mehrere Reihen** zeigt Kartenlayouts. Diese Filter beziehen sich auf die Anordnung der Fahrer, nicht auf Hoch- oder Querformat des Bildschirms. Unter **Farbwelt** findest du **Hell & freundlich** oder **Dunkel**.
+
+Die Fahreranzahl ist zugleich Filter und Einstellung für den neuen RBS. Jede Vorlagenkarte zeigt ihren unterstützten Bereich. Einige breite Spaltenlayouts sind bewusst für weniger Fahrer ausgelegt. Wenn keine Vorlage passt, ändere die Fahreranzahl oder verwende **Filter zurücksetzen**; die Fahreranzahl bleibt dabei erhalten. Die leere Arbeitsfläche findest du mit **Alle Anordnungen** und **Alle Farben**.
+
+Diese 24 gestalteten Vorlagen stehen zur Auswahl. Alle Elemente, einschließlich der runden oder eckigen Flächen, bleiben einzeln bearbeitbar.
 
 | Vorlage | Geeignet für |
 | --- | --- |
@@ -75,6 +93,18 @@ Diese zwölf gestalteten Vorlagen stehen zur Auswahl.
 | Boxenmonitor | Tank, Stopps und Boxenstrafen |
 | Tageslicht | Eine helle Ergebnistafel |
 | Retro Timing | Eine bernsteinfarbene Rennanzeige |
+| Polar | Weiße Fahrerzeilen mit blauen Akzenten, 1–8 Fahrer |
+| Sonnengelb | Abgerundete Zeilen in warmem Gelb, 1–8 Fahrer |
+| Minze | Runde mintgrüne Karten mit Zeiten und Tank, 1–8 Fahrer |
+| Grüne Boxengasse | Eckige Zeilen mit Tank und Stopps neben einer Rennübersicht, 1–8 Fahrer |
+| Zitronen-Duell | Zwei breite, runde Fahrerfelder in Weiß und Gelb, 2 Fahrer |
+| Papierstreifen | Weiße Fahrerspalten mit blauen Trennlinien, 1–6 Fahrer |
+| Pistazie | Runde grüne Spalten mit großer Rundenzeit, 1–4 Fahrer |
+| Lagune | Eckige hellblaue Karten mit Zeit- und Tankfeldern, 1–8 Fahrer |
+| Aprikose | Abgerundete Fahrerzeilen in Creme und Orange, 1–8 Fahrer |
+| Startaufstellung | Eckige weiße Karten mit limettengrünen Datenfeldern, 1–8 Fahrer |
+| Podium | Breite Spalten mit großer Positionsanzeige, 1–3 Fahrer |
+| Gartenrennen | Sanftgrüne Fahrerzeilen neben einer großen Rennuhr, 1–8 Fahrer |
 
 ### Fahreranzahl bei einem bestehenden RBS
 
@@ -119,6 +149,12 @@ Wähle einen Text oder eine Textanzeige aus. Rechts kannst du Schriftart, Schrif
 Über **Farbquelle** wählst du eine feste Textfarbe oder die **Slot-Schriftfarbe**. Diese ist getrennt von der **Slot-Hintergrundfarbe**. So kannst du beispielsweise dunkle Schrift auf einem hellen Spurhintergrund verwenden.
 
 Wenn Fahrer- oder Fahrzeugnamen abgeschnitten werden, erhöhe die **Platzhalterlänge**, sofern dieses Feld angeboten wird. Damit reservierst du mehr Platz für die Anzeige. Der Wert **0** verwendet die feste Breite oder den Vorschautext. Bei Zahlen und Zeiten bestimmt der Vorschautext das Format und die automatische Feldbreite.
+
+### Ereignissymbole ein- und ausschalten
+
+Wähle ein **Ereignissymbol** aus. Unter **Symbol anzeigen** und **Symbol ausschalten** wählst du die Aktion anhand ihrer Cockpit-Bezeichnung, beispielsweise **Boxengasse Strafe wurde ausgesprochen** und **Boxengasse Strafe ist beendet**. Die zugehörigen Ereignisnummern werden automatisch gespeichert.
+
+Für eigene oder unbekannte Nummern öffne **Ereignis-ID manuell eingeben**. Unbekannte IDs aus vorhandenen RBS bleiben erhalten. **Kein Ereignis** entspricht der ID 0.
 
 ### Bilder und Hintergrund
 

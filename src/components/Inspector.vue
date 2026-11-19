@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import SymbolEventSelect from "./SymbolEventSelect.vue";
 import {
   geometry,
   inheritedAttributes,
@@ -299,18 +300,16 @@ const isImage = computed(
       </section>
       <section v-if="node.tag === 'symbole_einaus'" class="property-section">
         <h3>Ereignisse</h3>
-        <label class="stack-label"
-          >Ein-Ereignis<input
-            type="number"
-            :value="a.audioid_ein || 0"
-            @change="attr('audioid_ein', $event)"
-        /></label>
-        <label class="stack-label"
-          >Aus-Ereignis<input
-            type="number"
-            :value="a.audioid_aus || 0"
-            @change="attr('audioid_aus', $event)"
-        /></label>
+        <SymbolEventSelect
+          label="Symbol anzeigen"
+          :model-value="a.audioid_ein"
+          @update:model-value="emit('attrs', { audioid_ein: $event })"
+        />
+        <SymbolEventSelect
+          label="Symbol ausschalten"
+          :model-value="a.audioid_aus"
+          @update:model-value="emit('attrs', { audioid_aus: $event })"
+        />
       </section>
       <section
         v-if="['tankbar', 'progressbar'].includes(node.tag)"

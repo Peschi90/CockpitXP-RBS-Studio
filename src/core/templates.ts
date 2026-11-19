@@ -1,74 +1,144 @@
 import { elementXml } from "./catalog";
 import { fromCssColor, slotColors } from "./xml";
 import { createDesignedTemplate } from "./template-layouts";
-export const templates = [
+import {
+  friendlyTemplates,
+  createFriendlyTemplate,
+} from "./friendly-templates";
+export type TemplateArrangement = "vertical" | "horizontal" | "grid" | "free";
+export type TemplateTone = "light" | "dark" | "neutral";
+export const arrangementLabels: Record<TemplateArrangement, string> = {
+  vertical: "Untereinander",
+  horizontal: "Nebeneinander",
+  grid: "Kartenraster",
+  free: "Frei",
+};
+const classicTemplates = [
   {
     id: "race",
     name: "Club Race",
     description: "Fahrerzeilen mit Fahrzeug, Rundenzeit und Tank",
+    arrangement: "vertical",
+    tone: "dark",
   },
   {
     id: "timing",
     name: "Timing Pro",
     description: "Breite Zeitentabelle mit Abstand zum Vordermann",
+    arrangement: "vertical",
+    tone: "dark",
   },
   {
     id: "qualifying",
     name: "Qualifying",
     description: "Bestzeiten im Mittelpunkt, dazu aktuelle Runde",
+    arrangement: "vertical",
+    tone: "dark",
   },
   {
     id: "endurance",
     name: "Langstrecke",
     description: "Restzeit, Tankbalken und Tankstopps pro Fahrer",
+    arrangement: "vertical",
+    tone: "dark",
   },
   {
     id: "minimal",
     name: "Großanzeige",
     description: "Wenige große Werte für gute Lesbarkeit auf Distanz",
+    arrangement: "vertical",
+    tone: "dark",
   },
   {
     id: "cards",
     name: "Fahrer-Karten",
     description: "Kachelraster mit einer eigenen Karte je Fahrer",
+    arrangement: "grid",
+    tone: "dark",
   },
   {
     id: "pitwall",
     name: "Boxenmauer",
     description: "Senkrechte Spalten für den direkten Fahrervergleich",
+    arrangement: "horizontal",
+    tone: "dark",
   },
   {
     id: "broadcast",
     name: "Race TV",
     description: "Zeit und Rennstatus links, kompakte Fahrerliste rechts",
+    arrangement: "vertical",
+    tone: "dark",
   },
   {
     id: "duel",
     name: "Duell",
     description: "Zwei gegenüberliegende Spalten mit Fahrerfeldern",
+    arrangement: "grid",
+    tone: "dark",
   },
   {
     id: "telemetry",
     name: "Boxenmonitor",
     description: "Kacheln mit Tank, Stopps und Boxenstrafe",
+    arrangement: "grid",
+    tone: "dark",
   },
   {
     id: "light",
     name: "Tageslicht",
     description: "Helle Ergebnistafel mit dunkler Schrift und Zeitspalte",
+    arrangement: "vertical",
+    tone: "light",
   },
   {
     id: "retro",
     name: "Retro Timing",
     description: "Bernsteinfarbene Zeittafel mit Spur und Rundenzahl",
+    arrangement: "vertical",
+    tone: "dark",
   },
   {
     id: "blank",
     name: "Leere Arbeitsfläche",
     description: "Dein Design, von Grund auf",
+    arrangement: "free",
+    tone: "neutral",
   },
 ] as const;
+export type ClassicTemplateKind = (typeof classicTemplates)[number]["id"];
+export const templates = [
+  ...classicTemplates
+    .filter((t) => t.id !== "blank")
+    .map((t) => ({ ...t, minDrivers: 1, maxDrivers: 8 })),
+  ...friendlyTemplates,
+  ...classicTemplates
+    .filter((t) => t.id === "blank")
+    .map((t) => ({ ...t, minDrivers: 1, maxDrivers: 8 })),
+];
 export type TemplateKind = (typeof templates)[number]["id"];
+export function supportsDrivers(
+  template: { minDrivers: number; maxDrivers: number },
+  slots: number,
+) {
+  return (
+    Number.isInteger(slots) &&
+    slots >= template.minDrivers &&
+    slots <= template.maxDrivers
+  );
+}
+export function filterTemplates(
+  slots: number,
+  arrangement: TemplateArrangement | "all" = "all",
+  tone: TemplateTone | "all" = "all",
+) {
+  return templates.filter(
+    (t) =>
+      supportsDrivers(t, slots) &&
+      (arrangement === "all" || t.arrangement === arrangement) &&
+      (tone === "all" || t.tone === tone),
+  );
+}
 export function createTemplate(
   kind: TemplateKind,
   width = 1920,
@@ -78,8 +148,20 @@ export function createTemplate(
   width = Math.max(1, Math.min(16384, Math.round(width) || 1920));
   height = Math.max(1, Math.min(16384, Math.round(height) || 1080));
   slots = Math.max(1, Math.min(8, Math.round(slots) || 6));
+  const template = templates.find((t) => t.id === kind)!;
+  if (!supportsDrivers(template, slots))
+    throw new Error(
+      `${template.name} ist für ${template.minDrivers} bis ${template.maxDrivers} Fahrer vorgesehen.`,
+    );
+  const friendly = friendlyTemplates.find((t) => t.id === kind);
+  if (friendly) return createFriendlyTemplate(friendly, width, height, slots);
   if (kind !== "blank" && kind !== "race")
-    return createDesignedTemplate(kind, width, height, slots);
+    return createDesignedTemplate(
+      kind as Exclude<ClassicTemplateKind, "race" | "blank">,
+      width,
+      height,
+      slots,
+    );
   const graphics: string[] = [],
     texts: string[] = [],
     variables: string[] = [];

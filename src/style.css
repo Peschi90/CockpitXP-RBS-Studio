@@ -1227,8 +1227,98 @@ small {
   padding: 2px 8px 2px 2px;
 }
 .new-modal {
-  width: 1060px;
+  width: 1180px;
   max-width: 100%;
+  height: min(960px, calc(100vh - 64px));
+  max-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.new-modal > * {
+  flex-shrink: 0;
+}
+.new-modal .modal-heading {
+  margin-bottom: 12px;
+}
+.new-modal > .muted {
+  margin-bottom: 16px;
+}
+.template-filters,
+.template-size-settings {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr 1fr;
+  gap: 14px;
+}
+.template-filters .stack-label {
+  margin: 0;
+}
+.template-size-settings {
+  grid-template-columns: 2fr 1fr 1fr;
+  padding-top: 12px;
+  border-top: 1px solid #35404c;
+}
+.template-size-settings .stack-label {
+  margin: 0;
+}
+.template-result-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 34px;
+  color: #a8b8c8;
+  font-size: 11px;
+  margin-top: 6px;
+}
+.template-result-summary > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.template-reset {
+  padding: 5px 8px;
+  font-size: 11px;
+  color: var(--accent);
+}
+.new-modal .template-options {
+  flex: 1;
+  min-height: 120px;
+  max-height: none;
+  margin: 2px 0 10px;
+  align-content: start;
+}
+.template-empty {
+  flex: 1;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #a8b8c8;
+  text-align: center;
+}
+.template-empty p {
+  margin: 0;
+}
+.template-empty button {
+  color: var(--accent);
+}
+.template-selection {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 11px;
+  margin: 2px 0 12px;
+  color: #d7e8f7;
+}
+.template-selection > span {
+  color: #8e9fac;
+}
+.new-modal .modal-footer {
+  margin-top: 14px;
+  padding-top: 14px;
 }
 .template-options > button {
   display: flex;
@@ -1301,11 +1391,40 @@ small {
   font-size: 13px;
   font-weight: 600;
 }
-.template-options span {
+.template-options .template-description {
   font-size: 10px;
   color: #8e9fac;
   line-height: 1.5;
   margin-top: 3px;
+}
+.template-meta {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding-top: 10px;
+  margin-top: auto;
+}
+.template-meta > span {
+  color: #b8cbdc;
+  background: #243244;
+  border-radius: 4px;
+  font-size: 9px;
+  padding: 3px 6px;
+}
+@media (max-height: 800px) {
+  .new-modal {
+    padding: 20px;
+  }
+  .new-modal .template-preview {
+    aspect-ratio: auto;
+    height: 108px;
+  }
+  .new-modal .template-options > button {
+    padding: 9px;
+  }
+  .new-modal .template-meta {
+    padding-top: 6px;
+  }
 }
 .modal-footer {
   display: flex;

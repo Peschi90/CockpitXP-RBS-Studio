@@ -1,10 +1,10 @@
 import { elementXml } from "./catalog";
 import { escapeXml, fromCssColor, slotColors } from "./xml";
-import type { TemplateKind } from "./templates";
+import type { ClassicTemplateKind } from "./templates";
 
 /** Native RBS primitives only: no external images, fonts, or AddOns required. */
 export function createDesignedTemplate(
-  kind: Exclude<TemplateKind, "race" | "blank">,
+  kind: Exclude<ClassicTemplateKind, "race" | "blank">,
   width: number,
   height: number,
   slots: number,

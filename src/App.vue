@@ -54,7 +54,7 @@ import UpdateDialog from "./components/UpdateDialog.vue";
 import { version } from "../package.json";
 import StartDashboard from "./components/StartDashboard.vue";
 import TemplatePicker from "./components/TemplatePicker.vue";
-import { type TemplateKind } from "./core/templates";
+import { templates, type TemplateKind } from "./core/templates";
 import RbsCanvas from "./components/RbsCanvas.vue";
 import Inspector from "./components/Inspector.vue";
 import RuntimePanel from "./components/RuntimePanel.vue";
@@ -129,7 +129,7 @@ const tab = ref<"layers" | "elements" | "library">("layers"),
 const modal = ref<"new" | "xml" | "repeat" | "help" | "issues" | null>(null),
   xmlDraft = ref(""),
   xmlError = ref(""),
-  newKind = ref<TemplateKind>("race"),
+  newKind = ref<TemplateKind | null>("race"),
   newWidth = ref(1920),
   newHeight = ref(1080),
   newSlots = ref(6),
@@ -237,6 +237,7 @@ function applyXml() {
   }
 }
 async function createNew() {
+  if (!newKind.value) return;
   if (
     await e.newDocument(
       newKind.value,
@@ -406,7 +407,13 @@ onUnmounted(() => {
 });
 </script>
 <template>
-  <UpdateDialog :dirty="e.dirty" :editor-busy="e.busy" :save="e.save" @open="updateOpen = $event" @busy="updateBusy = $event" />
+  <UpdateDialog
+    :dirty="e.dirty"
+    :editor-busy="e.busy"
+    :save="e.save"
+    @open="updateOpen = $event"
+    @busy="updateBusy = $event"
+  />
   <div
     class="app-shell"
     :class="{ 'simulation-expanded': simPanel && !dashboard }"
@@ -1079,55 +1086,48 @@ onUnmounted(() => {
         </div>
         <template v-if="modal === 'new'"
           ><p class="muted">
-            Zwölf Rennlayouts oder eine leere Arbeitsfläche. Die Vorlage wird
-            für deine Fahreranzahl erstellt; alle Elemente bleiben einzeln
-            bearbeitbar.
+            {{ templates.length - 1 }} Rennlayouts von hell bis dunkel oder eine
+            leere Arbeitsfläche. Wähle deine Fahreranzahl und finde die passende
+            Anordnung.
           </p>
           <TemplatePicker
             v-model="newKind"
-            :slots="newSlots"
+            v-model:slots="newSlots"
             :width="newWidth"
             :height="newHeight"
           />
-          <label class="stack-label"
-            >Auflösung<select @change="setResolution">
-              <option value="1920x1080">Full HD · 1920 × 1080</option>
-              <option value="2560x1440">QHD · 2560 × 1440</option>
-              <option value="3840x2160">4K · 3840 × 2160</option>
-              <option value="1280x720">HD · 1280 × 720</option>
-              <option value="1024x768">Klassisch · 1024 × 768</option>
-            </select></label
-          >
-          <div class="field-grid three">
-            <label
+          <div class="template-size-settings">
+            <label class="stack-label"
+              >Auflösung<select @change="setResolution">
+                <option value="1920x1080">Full HD · 1920 × 1080</option>
+                <option value="2560x1440">QHD · 2560 × 1440</option>
+                <option value="3840x2160">4K · 3840 × 2160</option>
+                <option value="1280x720">HD · 1280 × 720</option>
+                <option value="1024x768">Klassisch · 1024 × 768</option>
+              </select></label
+            >
+            <label class="stack-label"
               ><span>Breite</span
               ><input
                 v-model.number="newWidth"
                 type="number"
                 min="1"
                 max="16384" /></label
-            ><label
+            ><label class="stack-label"
               ><span>Höhe</span
               ><input
                 v-model.number="newHeight"
                 type="number"
                 min="1"
-                max="16384" /></label
-            ><label
-              ><span>Fahrer</span
-              ><select
-                v-model.number="newSlots"
-                aria-label="Fahreranzahl der Vorlage"
-              >
-                <option v-for="n in 8" :key="n">{{ n }}</option>
-              </select></label
-            >
+                max="16384"
+            /></label>
           </div>
           <div class="modal-footer">
             <button @click="modal = null">Abbrechen</button
             ><button
               class="primary"
               :disabled="
+                !newKind ||
                 !(
                   newWidth > 0 &&
                   newWidth <= 16384 &&

@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { templates } from "../../src/core/templates";
+import { templates, filterTemplates } from "../../src/core/templates";
 const source =
   '<RennScreen><base><dim xmax="800" ymax="600" slots="2"/></base><grafik><box left="70" top="110" breite="80" hoehe="40" c="00FFC874"/><box left="340" top="270" breite="110" hoehe="100" c="00BAE065"/></grafik></RennScreen>';
 async function openFixture(page: Page) {
@@ -90,23 +90,27 @@ test("multi-selection moves rigidly and Escape cancels without editing XML", asy
   );
   await expect(page.locator(".document-dot")).not.toHaveClass(/dirty/);
 });
-test("twelve live template previews create editable eight-driver RBS layouts", async ({
+test("all live template previews create editable RBS layouts at their maximum driver count", async ({
   page,
 }) => {
-  test.setTimeout(90000);
+  test.setTimeout(180000);
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("dialog", (dialog) => dialog.accept());
   await page.goto("/");
   await page.getByRole("button", { name: /Neuen RBS anlegen/ }).click();
-  await expect(page.locator(".template-options > button")).toHaveCount(13);
-  await expect(page.locator(".template-preview .artboard")).toHaveCount(12);
+  await expect(page.locator(".template-options > button")).toHaveCount(
+    filterTemplates(6).length,
+  );
+  await expect(page.locator(".template-preview .artboard")).toHaveCount(
+    filterTemplates(6).length - 1,
+  );
   await page.screenshot({ path: "test-results/Vorlagen.png", fullPage: true });
-  await page
-    .getByRole("dialog")
-    .getByLabel("Fahreranzahl der Vorlage", { exact: true })
-    .selectOption("8");
   for (const t of templates.filter((t) => t.id !== "blank")) {
+    await page
+      .getByRole("dialog")
+      .getByLabel("Fahreranzahl der Vorlage", { exact: true })
+      .selectOption(String(t.maxDrivers));
     await page.locator(`[data-template="${t.id}"]`).click();
     await expect(page.locator(`[data-template="${t.id}"]`)).toHaveAttribute(
       "aria-pressed",
@@ -116,7 +120,9 @@ test("twelve live template previews create editable eight-driver RBS layouts", a
       .getByRole("button", { name: "Rennbildschirm erstellen" })
       .click();
     await expect(page.locator(".workspace")).toBeVisible();
-    await expect(page.locator(".canvas-topline")).toContainText("8 Fahrer");
+    await expect(page.locator(".canvas-topline")).toContainText(
+      `${t.maxDrivers} Fahrer`,
+    );
     // Inspect text rendering, including field clipping, in the generated layout.
     const bounds = await page
       .locator(".workspace .rbs-element")
@@ -147,4 +153,98 @@ test("twelve live template previews create editable eight-driver RBS layouts", a
     await page.getByRole("button", { name: "Neu", exact: true }).click();
   }
   expect(errors).toEqual([]);
+});
+
+test("template filters share the driver count with previews and creation, and clear hidden choices", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: /Neuen RBS anlegen/ }).click();
+  const create = page.getByRole("button", { name: "Rennbildschirm erstellen" });
+  await page
+    .getByLabel("Fahreranzahl der Vorlage", { exact: true })
+    .selectOption("2");
+  await page.getByLabel("Fahrer-Anordnung filtern").selectOption("horizontal");
+  await page.getByLabel("Farbwelt filtern").selectOption("light");
+  await expect(page.locator(".template-options > button")).toHaveCount(4);
+  await page.locator('[data-template="lemon"]').click();
+  await expect(page.locator(".template-selection")).toContainText(
+    "Zitronen-Duell · 2 Fahrer",
+  );
+  await page
+    .getByLabel("Fahreranzahl der Vorlage", { exact: true })
+    .selectOption("6");
+  await expect(page.locator(".template-options > button")).toHaveCount(1);
+  await expect(page.locator('[data-template="paper"]')).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await page
+    .getByLabel("Fahreranzahl der Vorlage", { exact: true })
+    .selectOption("8");
+  await expect(
+    page.getByText("Keine passende Vorlage", { exact: true }),
+  ).toBeVisible();
+  await expect(create).toBeDisabled();
+  await page
+    .locator(".template-empty")
+    .getByRole("button", { name: "Filter zurücksetzen" })
+    .click();
+  await expect(create).toBeEnabled();
+  await expect(
+    page.getByLabel("Fahreranzahl der Vorlage", { exact: true }),
+  ).toHaveValue("8");
+  await page.getByLabel("Farbwelt filtern").selectOption("light");
+  await page
+    .getByLabel("Fahreranzahl der Vorlage", { exact: true })
+    .selectOption("4");
+  await page.locator('[data-template="sunshine"]').click();
+  await page.screenshot({
+    path: "test-results/Vorlagen-hell.png",
+    fullPage: true,
+  });
+  await page
+    .getByLabel("Fahreranzahl der Vorlage", { exact: true })
+    .selectOption("8");
+  await page.getByLabel("Fahrer-Anordnung filtern").selectOption("grid");
+  await expect(page.locator(".template-options > button")).toHaveCount(3);
+  await page.locator('[data-template="mint"]').click();
+  await create.click();
+  await expect(page.locator(".canvas-topline")).toContainText("8 Fahrer");
+  await expect(
+    page.locator(".workspace .artboard > rect").first(),
+  ).toHaveAttribute("fill", /^#eaf8f1$/i);
+});
+
+test("light template picker keeps filters and creation visible in a small window", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1100, height: 720 });
+  await page.goto("/");
+  await page.getByRole("button", { name: /Neuen RBS anlegen/ }).click();
+  await page
+    .getByLabel("Fahreranzahl der Vorlage", { exact: true })
+    .selectOption("2");
+  await page.getByLabel("Farbwelt filtern").selectOption("light");
+  const dialog = page.getByRole("dialog");
+  const bounds = await dialog.boundingBox();
+  const create = page.getByRole("button", { name: "Rennbildschirm erstellen" });
+  const footer = await create.boundingBox();
+  expect(bounds!.y).toBeGreaterThanOrEqual(0);
+  expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(720);
+  expect(footer!.y + footer!.height).toBeLessThanOrEqual(
+    bounds!.y + bounds!.height,
+  );
+  await page.locator('[data-template="garden"]').click();
+  await expect(page.locator('[data-template="garden"]')).toBeInViewport({
+    ratio: 1,
+  });
+  await expect(page.getByLabel("Farbwelt filtern")).toBeInViewport();
+  await expect(create).toBeInViewport();
+  await page.screenshot({
+    path: "test-results/Vorlagen-hell-klein.png",
+    fullPage: true,
+  });
+  await create.click();
+  await expect(page.locator(".canvas-topline")).toContainText("2 Fahrer");
 });
