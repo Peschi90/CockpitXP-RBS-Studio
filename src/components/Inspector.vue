@@ -29,6 +29,7 @@ import {
   Bold,
   Italic,
   ChevronDown,
+  Users,
 } from "@lucide/vue";
 const props = defineProps<{
   doc: RbsDocument;
@@ -46,6 +47,7 @@ const emit = defineEmits<{
   duplicate: [];
   remove: [];
   repeat: [];
+  driverLayout: [];
 }>();
 const g = computed(() =>
     props.node ? layoutGeometry(props.node, props.doc) : undefined,
@@ -539,6 +541,15 @@ const isImage = computed(
             <option value="-1">Cockpit-Einstellung übernehmen</option>
           </select></label
         >
+      </section>
+      <section class="property-section">
+        <button
+          class="wide-button"
+          :disabled="!doc.elements.length"
+          @click="emit('driverLayout')"
+        >
+          <Users :size="15" /> Fahrerplätze anpassen…
+        </button>
       </section>
       <section class="property-section">
         <h3>Hintergrund</h3>

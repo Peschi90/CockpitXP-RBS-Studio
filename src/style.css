@@ -290,6 +290,11 @@ small {
   border-right: 1px solid #303d4e;
   padding-right: 10px;
 }
+.toolbar .driver-tool {
+  border: 1px solid var(--accent-border);
+  color: var(--accent);
+  padding-inline: 10px;
+}
 .toolbar-hint {
   flex: 1;
   color: #768290;

@@ -49,6 +49,7 @@ import {
   Fuel,
   Gauge,
   ArrowUpRight,
+  Users,
 } from "@lucide/vue";
 import UpdateDialog from "./components/UpdateDialog.vue";
 import { version } from "../package.json";
@@ -56,6 +57,7 @@ import StartDashboard from "./components/StartDashboard.vue";
 import TemplatePicker from "./components/TemplatePicker.vue";
 import { templates, type TemplateKind } from "./core/templates";
 import RbsCanvas from "./components/RbsCanvas.vue";
+import DriverWizard from "./components/DriverWizard.vue";
 import Inspector from "./components/Inspector.vue";
 import RuntimePanel from "./components/RuntimePanel.vue";
 import { useEditor } from "./core/editor";
@@ -81,6 +83,12 @@ import {
 const e = reactive(useEditor()),
   canvas = ref<InstanceType<typeof RbsCanvas>>();
 const dashboard = ref(true);
+const driverWizardOpen = ref(false);
+function applyDriverLayout(source: string) {
+  if (e.busy) return;
+  e.commit(source, []);
+  driverWizardOpen.value = false;
+}
 const updateOpen = ref(false);
 const updateBusy = ref(false);
 const lapMin = ref(e.sim.lapMinMs / 1000);
@@ -259,7 +267,7 @@ function setResolution(event: Event) {
   newHeight.value = h!;
 }
 function keydown(event: KeyboardEvent) {
-  if (updateOpen.value) return;
+  if (updateOpen.value || driverWizardOpen.value) return;
   const editing = (event.target as HTMLElement)?.closest(
     'input,textarea,select,[contenteditable="true"]',
   );
@@ -534,6 +542,14 @@ onUnmounted(() => {
           <BetweenHorizontalStart :size="17" />
         </button>
       </div>
+      <button
+        class="driver-tool"
+        :disabled="e.busy || !e.doc.elements.length"
+        title="Fahrerplätze anpassen"
+        @click="driverWizardOpen = true"
+      >
+        <Users :size="16" /> Fahrerplätze
+      </button>
       <span class="toolbar-hint">{{
         e.selected.length
           ? `${e.selected.length} Element${e.selected.length === 1 ? "" : "e"} ausgewählt`
@@ -814,6 +830,7 @@ onUnmounted(() => {
         @duplicate="e.duplicate()"
         @remove="e.remove()"
         @repeat="modal = 'repeat'"
+        @driver-layout="driverWizardOpen = true"
       />
     </main>
     <section v-if="simPanel && !dashboard" class="simulator-panel">
@@ -1050,6 +1067,14 @@ onUnmounted(() => {
           (event.target as HTMLInputElement).value = '';
         }
       "
+    />
+    <DriverWizard
+      v-if="driverWizardOpen"
+      :doc="e.doc"
+      :assets="e.assets"
+      :selected="e.selected"
+      @close="driverWizardOpen = false"
+      @apply="applyDriverLayout"
     />
     <div v-if="modal" class="modal-backdrop" @click.self="modal = null">
       <section
